@@ -12,7 +12,7 @@ Usage
 --------
 
 ```shell
-studentify.py -i <inputfile> -o <outputfile>
+python studentify.py -i <inputfile> -o <outputfile>
 ```
 The script will remove any line from the original input file that ends with a `C/C++` comment `//!!`, e.g.:
 
