@@ -66,4 +66,4 @@ for opt, arg in opts:
 print 'Input file is "', inputfile
 print 'Output file is "', outputfile
 
-removeCode(inputfile, outputfile, '\/\/!!')
+removeCode(inputfile, outputfile, '//!!')
