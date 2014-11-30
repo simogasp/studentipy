@@ -53,6 +53,27 @@ def removeCode(inputfilename, outputfilename, token):
             #close the files
             dstfile.close();
 
+def parseDirectory(input, output):
+    """ parse the input directory recursively and ricreate the same repository
+        in output parsing the files and removing the lines tagged with the proper token   
+    """
+    # create the output directory
+
+    # list the elements in the input directory
+
+    # for each directory in the current directory
+        # recursive call
+
+    # for each file
+        # if it is a known extension
+            #process it with removeCode
+        # otherwise
+            #just copy it
+    
+
+
+
+
 
 if __name__ == "__main__":                
 
@@ -78,6 +99,8 @@ if __name__ == "__main__":
         elif opt in ("-o", "--ofile"):
             outputfile = arg
 
+    os.path.normpath(inputfile)
+    os.path.normpath(outputfile)
     # check the input arguments
     if inputfile == '' or outputfile == '':
         print('Missing argument(s)')
@@ -88,11 +111,8 @@ if __name__ == "__main__":
         help(sys.argv[0])
         sys.exit()
 
-
-    os.path.normpath(inputfile)
-    os.path.normpath(outputfile)
-    print 'Input file is "', inputfile
-    print 'Output file is "', outputfile
+    print 'Input is "', inputfile
+    print 'Output is "', outputfile
 
     # if it's a folder
     if os.path.isdir(inputfile):
