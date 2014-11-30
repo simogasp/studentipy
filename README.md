@@ -18,7 +18,7 @@ The script will remove any line from the original input file(s) that ends with a
 
 Supported languages:
 | Language   |   token   |
-| ---------------- |:-------------:| 
+| ---------------- | ------------- | 
 | c/c++        |    //!!      |
 | matlab       |    %%!!   |
 | javascript   |    //!!      |
