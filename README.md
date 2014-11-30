@@ -7,10 +7,6 @@ Introduction
 
 A simple script to generate the version of a code to be given to the student. The script parses the input file and create a copy of it removing the lines tagged with a special comment tag. It automatically detects the language. More over it can be used on a directory to recursively create a copy of it parsing all the files in it.
 
-| header 1 | header 2 |
-| -------- | -------- |
-| cell 1   | cell 2   |
-| cell 3   | cell 4   |
 
 --------
 Usage
@@ -25,10 +21,10 @@ Supported languages:
 
 | Language   |   token   |
 | ---------------- | ------------- | 
-| c/c++        |    //!!      |
-| matlab       |    %%!!   |
-| javascript   |    //!!      |
-| python       |    #!!      |
+| c/c++        |    `//!!`      |
+| matlab       |    `%%!!`   |
+| javascript   |    `//!!`      |
+| python       |    `#!!`      |
 
 For example in the following piece of C code the three lines will be removed
 
