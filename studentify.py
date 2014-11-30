@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import sys, getopt, os, re
+import sys, getopt, os, re, shutil
 from collections import namedtuple
 
 langInfo = namedtuple('langInfo', 'name, extensions, token')
@@ -53,23 +53,37 @@ def removeCode(inputfilename, outputfilename, token):
             #close the files
             dstfile.close();
 
-def parseDirectory(input, output):
-    """ parse the input directory recursively and ricreate the same repository
+def parseDirectory(inputDir, outputDir):
+    """ parse the input directory recursively and recreate the same repository
         in output parsing the files and removing the lines tagged with the proper token   
     """
     # create the output directory
+    os.makedirs(outputDir)
 
     # list the elements in the input directory
-
-    # for each directory in the current directory
-        # recursive call
-
-    # for each file
-        # if it is a known extension
-            #process it with removeCode
-        # otherwise
-            #just copy it
-    
+    for dirname, dirnames, filenames in os.walk(inputDir):
+        print("\nDirectories in "+dirname)
+        newbase = os.path.normpath(re.compile('^'+inputDir).sub(outputDir+os.sep,dirname))+os.sep
+        print newbase
+        # print path to all subdirectories first.
+        for subdirname in dirnames:
+            # create the a copy of the directory
+            os.makedirs(os.path.normpath(os.path.join(newbase, subdirname)))
+            print os.path.normpath(os.path.join(newbase, subdirname))
+        # print path to all filenames.
+        print("Filenames")
+        for filename in filenames:
+            print os.path.normpath(os.path.join(newbase, filename))
+            n, ext = os.path.splitext(filename)
+            m = [x for x in suppLang if ext in x.extensions]
+            if not m:
+                print("No supported language found for file "+filename)
+                shutil.copyfile(os.path.join(dirname, filename), os.path.normpath(os.path.join(newbase, filename)))
+            else:
+                # if it is a known language apply the transformation with the given token
+                print("Detected "+m[0].name+" language for "+filename+"\nProcessing...\n")
+                removeCode(os.path.join(dirname, filename), os.path.normpath(os.path.join(newbase, filename)), m[0].token)
+            
 
 
 
@@ -117,6 +131,17 @@ if __name__ == "__main__":
     # if it's a folder
     if os.path.isdir(inputfile):
         print("Parsing directory is not available (yet)")
+        # check whether the outdir already exist
+        if os.path.exists(outputfile):
+            # if so ask the user what to do (delete or stop)
+            answer = raw_input("The output directory "+outputfile+" already exists. Do you want to remove it? [Y/n]: ")
+            print('Answer '+answer)
+            if answer.lower() in ["y", "yes"] or answer == "":
+                shutil.rmtree(outputfile)
+            else:
+                print("Aborting...")
+        parseDirectory(inputfile, outputfile) 
+
     # otherwise if it is a file
     elif os.path.isfile(inputfile):
         # get the extension
@@ -133,3 +158,18 @@ if __name__ == "__main__":
         print('Cannot find the input folder/file')
 
 
+# import os
+# base = ".new/"
+# curr = os.getcwd()
+# old = '.git'
+# for dirname, dirnames, filenames in os.walk(old):
+#     print("\nDirectories in "+dirname)
+#     rightmost = os.path.normpath(re.compile('^'+old).sub(base,dirname))
+#     print rightmost
+#     # print path to all subdirectories first.
+#     for subdirname in dirnames:
+#         print os.path.normpath(os.path.join(base, dirname, subdirname))
+#     # print path to all filenames.
+#     print("Filenames")
+#     for filename in filenames:
+#         print os.path.normpath(os.path.join(base, dirname, filename))
