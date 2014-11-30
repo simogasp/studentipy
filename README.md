@@ -17,11 +17,12 @@ python studentify.py -i <input[file,directory]> -o <output[file,directory]>
 The script will remove any line from the original input file(s) that ends with a particular comment tag.
 
 Supported languages:
-Language   |   token
-c/c++        |    //!!
-matlab       |    %%!!
-javascript   |    //!!
-python       |    #!!
+| Language   |   token   |
+| ---------------- |:-------------:| 
+| c/c++        |    //!!      |
+| matlab       |    %%!!   |
+| javascript   |    //!!      |
+| python       |    #!!      |
 
 For example in the following piece of C code the three lines will be removed
 
