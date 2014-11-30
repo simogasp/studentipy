@@ -5,11 +5,26 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import sys, getopt, os, re
+from collections import namedtuple
+
+langInfo = namedtuple('langInfo', 'name, extensions, token')
+suppLang = [];
+suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],'//!!'))
+suppLang.append(langInfo('matlab', ['.m'],'\%\%!!'))
+suppLang.append(langInfo('javascript', ['.js'],'//!!'))
+suppLang.append(langInfo('python', ['.py'],'#!!'))
+
+
 
 def help(name):
     """ print the usage for the program
     """
     print('Usage:\n\t'+name+' -i <inputfile> -o <outputfile>')
+    print("\nSupported languages:\nLanguage\t\ttoken")
+    for i in suppLang:
+        print(i.name+"\t\t\t"+i.token)
+
+
 
 def removeCode(inputfilename, outputfilename, token):
     """ create a copy of a file by removing the line of code ended by a comment containing the token
@@ -50,12 +65,12 @@ if __name__ == "__main__":
     inputfile = ''
     outputfile = ''
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hi:o:",["ifile=","ofile="])
+        opts, args = getopt.getopt(sys.argv[1:],"hi:o:",["ifile=","ofile=","help"])
     except getopt.GetoptError:
         print 'test.py -i <inputfile> -o <outputfile>'
         sys.exit(2)
     for opt, arg in opts:
-        if opt == '-h':
+        if opt == ('-h', '--help'):
             help(sys.argv[0])
             sys.exit()
         elif opt in ("-i", "--ifile"):
@@ -67,9 +82,11 @@ if __name__ == "__main__":
     if inputfile == '' or outputfile == '':
         print('Missing argument(s)')
         help(sys.argv[0])
+        sys.exit()
     elif inputfile == outputfile:
         print("Can't use the same file as input and output")
         help(sys.argv[0])
+        sys.exit()
 
 
     os.path.normpath(inputfile)
@@ -79,13 +96,19 @@ if __name__ == "__main__":
 
     # if it's a folder
     if os.path.isdir(inputfile):
-        print("not available yet")
+        print("Parsing directory is not available (yet)")
     # otherwise if it is a file
     elif os.path.isfile(inputfile):
         # get the extension
-        #os.path.splitext(path)
-        # if it is a known language apply the transformation with the given token
-        removeCode(inputfile, outputfile, '//!!')
+        base, ext = os.path.splitext(inputfile)
+        m = [x for x in suppLang if ext in x.extensions]
+        if not m:
+            print("No supported language found for file "+inputfile)
+            sys.exit()
+        else:
+            # if it is a known language apply the transformation with the given token
+            print("Detected "+m[0].name+" language for "+inputfile+"\nProcessing...\n")
+            removeCode(inputfile, outputfile, m[0].token)
     else:
         print('Cannot find the input folder/file')
 
