@@ -48,7 +48,7 @@ def removeCode(inputfilename, outputfilename, token):
                     dstfile.write(line)
                 else:
                     dstfile.write('\n')
-                    print line
+                    # print line
             
             #close the files
             dstfile.close();
@@ -62,18 +62,18 @@ def parseDirectory(inputDir, outputDir):
 
     # list the elements in the input directory
     for dirname, dirnames, filenames in os.walk(inputDir):
-        print("\nDirectories in "+dirname)
+        # print("\nDirectories in "+dirname)
         newbase = os.path.normpath(re.compile('^'+inputDir).sub(outputDir+os.sep,dirname))+os.sep
-        print newbase
+        # print newbase
         # print path to all subdirectories first.
         for subdirname in dirnames:
             # create the a copy of the directory
             os.makedirs(os.path.normpath(os.path.join(newbase, subdirname)))
             print os.path.normpath(os.path.join(newbase, subdirname))
         # print path to all filenames.
-        print("Filenames")
+        # print("Filenames")
         for filename in filenames:
-            print os.path.normpath(os.path.join(newbase, filename))
+            # print os.path.normpath(os.path.join(newbase, filename))
             n, ext = os.path.splitext(filename)
             m = [x for x in suppLang if ext in x.extensions]
             if not m:
@@ -81,7 +81,7 @@ def parseDirectory(inputDir, outputDir):
                 shutil.copyfile(os.path.join(dirname, filename), os.path.normpath(os.path.join(newbase, filename)))
             else:
                 # if it is a known language apply the transformation with the given token
-                print("Detected "+m[0].name+" language for "+filename+"\nProcessing...\n")
+                print("Detected "+m[0].name+" language for "+filename+"\tProcessing...")
                 removeCode(os.path.join(dirname, filename), os.path.normpath(os.path.join(newbase, filename)), m[0].token)
             
 
@@ -135,7 +135,6 @@ if __name__ == "__main__":
         if os.path.exists(outputfile):
             # if so ask the user what to do (delete or stop)
             answer = raw_input("The output directory "+outputfile+" already exists. Do you want to remove it? [Y/n]: ")
-            print('Answer '+answer)
             if answer.lower() in ["y", "yes"] or answer == "":
                 shutil.rmtree(outputfile)
             else:
@@ -157,19 +156,3 @@ if __name__ == "__main__":
     else:
         print('Cannot find the input folder/file')
 
-
-# import os
-# base = ".new/"
-# curr = os.getcwd()
-# old = '.git'
-# for dirname, dirnames, filenames in os.walk(old):
-#     print("\nDirectories in "+dirname)
-#     rightmost = os.path.normpath(re.compile('^'+old).sub(base,dirname))
-#     print rightmost
-#     # print path to all subdirectories first.
-#     for subdirname in dirnames:
-#         print os.path.normpath(os.path.join(base, dirname, subdirname))
-#     # print path to all filenames.
-#     print("Filenames")
-#     for filename in filenames:
-#         print os.path.normpath(os.path.join(base, dirname, filename))
