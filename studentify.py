@@ -19,7 +19,7 @@ suppLang.append(langInfo('python', ['.py'],'#!!'))
 def help(name):
     """ print the usage for the program
     """
-    print('Usage:\n\t'+name+' -i <inputfile> -o <outputfile>')
+    print('Usage:\n\t'+name+' -i <input file or dir> -o <output file or dir>')
     print("\nSupported languages:\nLanguage\t\ttoken")
     for i in suppLang:
         print(i.name+"\t\t\t"+i.token)
@@ -52,6 +52,8 @@ def removeCode(inputfilename, outputfilename, token):
             
             #close the files
             dstfile.close();
+
+
 
 def parseDirectory(inputDir, outputDir):
     """ parse the input directory recursively and recreate the same repository
@@ -154,5 +156,5 @@ if __name__ == "__main__":
             print("Detected "+m[0].name+" language for "+inputfile+"\nProcessing...\n")
             removeCode(inputfile, outputfile, m[0].token)
     else:
-        print('Cannot find the input folder/file')
+        print('Cannot find the input folder/file!')
 
