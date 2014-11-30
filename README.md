@@ -7,6 +7,11 @@ Introduction
 
 A simple script to generate the version of a code to be given to the student. The script parses the input file and create a copy of it removing the lines tagged with a special comment tag. It automatically detects the language. More over it can be used on a directory to recursively create a copy of it parsing all the files in it.
 
+| header 1 | header 2 |
+| -------- | -------- |
+| cell 1   | cell 2   |
+| cell 3   | cell 4   |
+
 --------
 Usage
 --------
@@ -17,6 +22,7 @@ python studentify.py -i <input[file,directory]> -o <output[file,directory]>
 The script will remove any line from the original input file(s) that ends with a particular comment tag.
 
 Supported languages:
+
 | Language   |   token   |
 | ---------------- | ------------- | 
 | c/c++        |    //!!      |
