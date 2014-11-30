@@ -39,31 +39,54 @@ def removeCode(inputfilename, outputfilename, token):
             dstfile.close();
 
 
-                
+if __name__ == "__main__":                
 
-# minimum arguments required
-if len(sys.argv) != 5:
-    help(sys.argv[0])
-    sys.exit()
-
-# parse the input arguments
-inputfile = ''
-outputfile = ''
-try:
-    opts, args = getopt.getopt(sys.argv[1:],"hi:o:",["ifile=","ofile="])
-except getopt.GetoptError:
-    print 'test.py -i <inputfile> -o <outputfile>'
-    sys.exit(2)
-for opt, arg in opts:
-    if opt == '-h':
+    # minimum arguments required
+    if len(sys.argv) != 5:
         help(sys.argv[0])
         sys.exit()
-    elif opt in ("-i", "--ifile"):
-        inputfile = arg
-    elif opt in ("-o", "--ofile"):
-        outputfile = arg
 
-print 'Input file is "', inputfile
-print 'Output file is "', outputfile
+    # parse the input arguments
+    inputfile = ''
+    outputfile = ''
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],"hi:o:",["ifile=","ofile="])
+    except getopt.GetoptError:
+        print 'test.py -i <inputfile> -o <outputfile>'
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            help(sys.argv[0])
+            sys.exit()
+        elif opt in ("-i", "--ifile"):
+            inputfile = arg
+        elif opt in ("-o", "--ofile"):
+            outputfile = arg
 
-removeCode(inputfile, outputfile, '//!!')
+    # check the input arguments
+    if inputfile == '' or outputfile == '':
+        print('Missing argument(s)')
+        help(sys.argv[0])
+    elif inputfile == outputfile:
+        print("Can't use the same file as input and output")
+        help(sys.argv[0])
+
+
+    os.path.normpath(inputfile)
+    os.path.normpath(outputfile)
+    print 'Input file is "', inputfile
+    print 'Output file is "', outputfile
+
+    # if it's a folder
+    if os.path.isdir(inputfile):
+        print("not available yet")
+    # otherwise if it is a file
+    elif os.path.isfile(inputfile):
+        # get the extension
+        #os.path.splitext(path)
+        # if it is a known language apply the transformation with the given token
+        removeCode(inputfile, outputfile, '//!!')
+    else:
+        print('Cannot find the input folder/file')
+
+
