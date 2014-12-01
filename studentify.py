@@ -13,6 +13,7 @@ suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],'//!!'
 suppLang.append(langInfo('matlab', ['.m'],'\%\%!!'))
 suppLang.append(langInfo('javascript', ['.js'],'//!!'))
 suppLang.append(langInfo('python', ['.py'],'#!!'))
+suppLang.append(langInfo('java', ['.java'],'//!!'))
 
 
 
