@@ -7,6 +7,11 @@ Introduction
 
 A simple script to generate the version of a code to be given to the student. The script parses the input file and create a copy of it removing the lines tagged with a special comment tag. It automatically detects the language. More over it can be used on a directory to recursively create a copy of it parsing all the files in it.
 
+--------
+Requirements
+--------
+
+The script has been developed and tested using Python 2.7.3. It has been tested on Python 3.x yet, in any case using the `2to3` tool the script can be eseasily ported to recent versions of Python.
 
 --------
 Usage
@@ -38,7 +43,7 @@ For example in the following piece of C code the three lines will be removed
     glTexCoord2f( 1, 0 );
 ```
 
-The script has been developed and tested using Python 2.7.3. It has been tested on Python 3.x yet, in any case using the `2to3` tool the script can be eseasily ported to recent versions of Python.
+
 
 -------
 License
