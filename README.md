@@ -25,6 +25,7 @@ Supported languages:
 | matlab       |    `%%!!`   |
 | javascript   |    `//!!`      |
 | python       |    `#!!`      |
+| java           |    `//!!`      |
 
 For example in the following piece of C code the three lines will be removed
 
@@ -36,6 +37,8 @@ For example in the following piece of C code the three lines will be removed
     glVertex2f( -1, 1 );
     glTexCoord2f( 1, 0 );
 ```
+
+The script has been developed and tested using Python 2.7.3. It has been tested on Python 3.x yet, in any case using the `2to3` tool the script can be eseasily ported to recent versions of Python.
 
 -------
 License
