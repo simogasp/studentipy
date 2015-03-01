@@ -7,13 +7,13 @@
 import sys, getopt, os, re, shutil
 from collections import namedtuple
 
-langInfo = namedtuple('langInfo', 'name, extensions, token')
+langInfo = namedtuple('langInfo', 'name, extensions, token, startToken, endToken')
 suppLang = [];
-suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],'//!!'))
-suppLang.append(langInfo('matlab', ['.m'],'\%\%!!'))
-suppLang.append(langInfo('javascript', ['.js'],'//!!'))
-suppLang.append(langInfo('python', ['.py'],'#!!'))
-suppLang.append(langInfo('java', ['.java'],'//!!'))
+suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],'//!!', '//<!!','//>!!'))
+suppLang.append(langInfo('matlab', ['.m'],'\%\%!!', '\%\%<!!','\%\%>!!'))
+suppLang.append(langInfo('javascript', ['.js'],'//!!', '//<!!','//>!!'))
+suppLang.append(langInfo('python', ['.py'],'#!!', '#<!!','#>!!'))
+suppLang.append(langInfo('java', ['.java'],'//!!', '//<!!','//>!!'))
 
 
 
@@ -21,13 +21,13 @@ def help(name):
     """ print the usage for the program
     """
     print('Usage:\n\t'+name+' -i <input file or dir> -o <output file or dir>')
-    print("\nSupported languages:\nLanguage\t\ttoken")
+    print("\nSupported languages:\nLanguage\t\ttoken\t\tstartToken\t\tendToken")
     for i in suppLang:
-        print(i.name+"\t\t\t"+i.token)
+        print(i.name+"\t\t\t"+i.token+"\t\t"+i.startToken)+"\t\t"+i.endToken
 
 
 
-def removeCode(inputfilename, outputfilename, token):
+def removeCode(inputfilename, outputfilename, token, startToken, endToken):
     """ create a copy of a file by removing the line of code ended by a comment containing the token
          inputfilename is the file to copy
          outputfilename is the destination file
@@ -36,19 +36,54 @@ def removeCode(inputfilename, outputfilename, token):
 
     if os.path.isfile(inputfilename):
 
+        # any toker without text in front, the token can be follow by text
         pattern = re.compile(ur'[ \t]*'+token+'.*[ \t]*$')
+        # any toker without text in front, the token can be follow by text
+        multiStart = re.compile(ur'^[ \t]*'+startToken+'.*[ \t]*')
+        # any toker without text in front, the token can be follow by text
+        multiEnd = re.compile(ur'^[ \t]*'+endToken+'.*[ \t]*')
         # open the file
         with open(inputfilename) as fp:
             # create the new file
             dstfile = open(outputfilename,'w')
+
+            # used to keep track of multiline 
+            multi = False
+
             # parse line by line
             for line in fp:
-                # if the line do not match copy it to the destination file
-                r = pattern.search(line)
-                if r == None:
-                    dstfile.write(line)
+
+                # if a start token has not be detecte recently
+                if not multi:
+
+                    #try to detect a start token
+                    s = multiStart.search(line)
+
+                    if s == None:
+
+                        # if the line do not match copy it to the destination file
+                        r = pattern.search(line)
+                        if r == None:
+                            dstfile.write(line)
+                        else:
+                            dstfile.write('\n')
+
+                    else:
+                        print("Detected start token:"+line)
+                        multi = True;
+                        # do nothing
                 else:
-                    dstfile.write('\n')
+
+                    #try to detect a end token
+                    s = multiEnd.search(line)
+
+                    if s == None:
+                        # do not copy the code and just add an empty line
+                        dstfile.write('\n')
+                    else:
+                        # otherwise do nothing as we don't want to copy the line neither add an empty line
+                        multi = False
+                        print("Detected end token:"+line)
                     # print line
             
             #close the files
@@ -85,7 +120,7 @@ def parseDirectory(inputDir, outputDir):
             else:
                 # if it is a known language apply the transformation with the given token
                 print("Detected "+m[0].name+" language for "+filename+"\tProcessing...")
-                removeCode(os.path.join(dirname, filename), os.path.normpath(os.path.join(newbase, filename)), m[0].token)
+                removeCode(os.path.join(dirname, filename), os.path.normpath(os.path.join(newbase, filename)), m[0].token, m[0].startToken, m[0].endToken)
             
 
 
@@ -155,7 +190,7 @@ if __name__ == "__main__":
         else:
             # if it is a known language apply the transformation with the given token
             print("Detected "+m[0].name+" language for "+inputfile+"\nProcessing...\n")
-            removeCode(inputfile, outputfile, m[0].token)
+            removeCode(inputfile, outputfile, m[0].token, m[0].startToken, m[0].endToken)
     else:
         print('Cannot find the input folder/file!')
 
