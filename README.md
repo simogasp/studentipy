@@ -32,7 +32,7 @@ Supported languages:
 | python       |    `#!!`      |    `#<!!`      |    `#>!!`      |
 | java           |    `//!!`      |    `//<!!`      |    `//>!!`      |
 
-For example in the following piece of C code the three lines will be removed
+For example in the following piece of C code a total of 6 lines will be removed
 
 ```c
     glBegin( GL_QUADS );
