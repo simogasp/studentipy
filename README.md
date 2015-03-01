@@ -24,13 +24,13 @@ The script will remove any line from the original input file(s) that ends with a
 
 Supported languages:
 
-| Language   |   token   |
-| ---------------- | ------------- | 
-| c/c++        |    `//!!`      |
-| matlab       |    `%%!!`   |
-| javascript   |    `//!!`      |
-| python       |    `#!!`      |
-| java           |    `//!!`      |
+| Language   |   token   |   startToken   |   endToken   |
+| ---------------- | ------------- | ------------- | ------------- |
+| c/c++        |    `//!!`      |    `//<!!`      |    `//>!!`      |
+| matlab       |    `%%!!`   |    `%%<!!`      |    `%%>!!`      |
+| javascript   |    `//!!`      |    `//<!!`      |    `//>!!`      |
+| python       |    `#!!`      |    `#<!!`      |    `#>!!`      |
+| java           |    `//!!`      |    `//<!!`      |    `//>!!`      |
 
 For example in the following piece of C code the three lines will be removed
 
@@ -41,6 +41,16 @@ For example in the following piece of C code the three lines will be removed
     glTexCoord2f( 0, 0 );   //!!   
     glVertex2f( -1, 1 );
     glTexCoord2f( 1, 0 );
+//<!! All these line will be removed
+    glTexCoord2f( 1, 1 );
+    glVertex2f( 1, -1 );
+    glEnd( );
+    //>!! just until this one
+
+    // reset the projection matrix
+    glMatrixMode( GL_PROJECTION );
+    glPopMatrix( );
+    glMatrixMode( GL_MODELVIEW );
 ```
 
 
