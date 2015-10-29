@@ -23,7 +23,7 @@ def help(name):
     print('Usage:\n\t'+name+' -i <input file or dir> -o <output file or dir>')
     print("\nSupported languages:\nLanguage\t\ttoken\t\tstartToken\t\tendToken")
     for i in suppLang:
-        print(i.name+"\t\t\t"+i.token+"\t\t"+i.startToken)+"\t\t"+i.endToken
+        print(i.name+"\t\t\t"+i.token+"\t\t"+i.startToken+"\t\t"+i.endToken)
 
 
 
@@ -36,12 +36,12 @@ def removeCode(inputfilename, outputfilename, token, startToken, endToken):
 
     if os.path.isfile(inputfilename):
 
-        # any toker without text in front, the token can be follow by text
-        pattern = re.compile(ur'[ \t]*'+token+'.*[ \t]*$')
-        # any toker without text in front, the token can be follow by text
-        multiStart = re.compile(ur'^[ \t]*'+startToken+'.*[ \t]*')
-        # any toker without text in front, the token can be follow by text
-        multiEnd = re.compile(ur'^[ \t]*'+endToken+'.*[ \t]*')
+        # any token without text in front, the token can be follow by text
+        pattern = re.compile(r"[ \t]*" + token +".*[ \t]*$", re.UNICODE)
+        # any tokenr without text in front, the token can be follow by text
+        multiStart = re.compile(r'^[ \t]*'+startToken+'.*[ \t]*', re.UNICODE)
+        # any token without text in front, the token can be follow by text
+        multiEnd = re.compile(r'^[ \t]*'+endToken+'.*[ \t]*', re.UNICODE)
         # open the file
         with open(inputfilename) as fp:
             # create the new file
@@ -107,7 +107,7 @@ def parseDirectory(inputDir, outputDir):
         for subdirname in dirnames:
             # create the a copy of the directory
             os.makedirs(os.path.normpath(os.path.join(newbase, subdirname)))
-            print os.path.normpath(os.path.join(newbase, subdirname))
+            print(os.path.normpath(os.path.join(newbase, subdirname)))
         # print path to all filenames.
         # print("Filenames")
         for filename in filenames:
@@ -127,7 +127,7 @@ def parseDirectory(inputDir, outputDir):
 
 
 
-if __name__ == "__main__":                
+if __name__ == "__main__":       
 
     # minimum arguments required
     if len(sys.argv) != 5:
@@ -163,8 +163,8 @@ if __name__ == "__main__":
         help(sys.argv[0])
         sys.exit()
 
-    print 'Input is "', inputfile
-    print 'Output is "', outputfile
+    print('Input is "', inputfile)
+    print('Output is "', outputfile)
 
     # if it's a folder
     if os.path.isdir(inputfile):
@@ -172,11 +172,12 @@ if __name__ == "__main__":
         # check whether the outdir already exist
         if os.path.exists(outputfile):
             # if so ask the user what to do (delete or stop)
-            answer = raw_input("The output directory "+outputfile+" already exists. Do you want to remove it? [Y/n]: ")
+            answer = input("The output directory "+outputfile+" already exists. Do you want to remove it? [Y/n]: ")
             if answer.lower() in ["y", "yes"] or answer == "":
                 shutil.rmtree(outputfile)
             else:
                 print("Aborting...")
+                sys.exit()
         parseDirectory(inputfile, outputfile) 
 
     # otherwise if it is a file
