@@ -11,7 +11,7 @@ A simple script to generate the version of a code to be given to the student. Th
 Requirements
 --------
 
-The script has been developed and tested using Python 2.7.3. It has been tested on Python 3.x yet, in any case using the `2to3` tool the script can be eseasily ported to recent versions of Python.
+The script has been developed and tested using Python 3.
 
 --------
 Usage
