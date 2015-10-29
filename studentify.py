@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import sys, getopt, os, re, shutil
+import argparse
 from collections import namedtuple
 
 langInfo = namedtuple('langInfo', 'name, extensions, token, startToken, endToken')
@@ -129,38 +130,22 @@ def parseDirectory(inputDir, outputDir):
 
 if __name__ == "__main__":       
 
-    # minimum arguments required
-    if len(sys.argv) != 5:
-        help(sys.argv[0])
-        sys.exit()
+    parser = argparse.ArgumentParser(description='A simple script to generate theversion of a code to be given to the student.'+
+                    'The script parses the input file and create a copy of it removing the lines tagged with a special comment tag.'+
+                    'It automatically detects the language. More over it can be used on a directory to recursively create a copy of it parsing all the files in it.')
+    parser.add_argument('-i', '--inputFile', required=True, help='The input file or directory to parse')
+    parser.add_argument('-o', '--outputFile', required=True, help='The output file or directory')
+    args = parser.parse_args()         
 
     # parse the input arguments
-    inputfile = ''
-    outputfile = ''
-    try:
-        opts, args = getopt.getopt(sys.argv[1:],"hi:o:",["ifile=","ofile=","help"])
-    except getopt.GetoptError:
-        print 'test.py -i <inputfile> -o <outputfile>'
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == ('-h', '--help'):
-            help(sys.argv[0])
-            sys.exit()
-        elif opt in ("-i", "--ifile"):
-            inputfile = arg
-        elif opt in ("-o", "--ofile"):
-            outputfile = arg
+    inputfile = args.inputFile
+    outputfile = args.outputFile
 
     os.path.normpath(inputfile)
     os.path.normpath(outputfile)
     # check the input arguments
-    if inputfile == '' or outputfile == '':
-        print('Missing argument(s)')
-        help(sys.argv[0])
-        sys.exit()
-    elif inputfile == outputfile:
+    if inputfile == outputfile:
         print("Can't use the same file as input and output")
-        help(sys.argv[0])
         sys.exit()
 
     print('Input is "', inputfile)
