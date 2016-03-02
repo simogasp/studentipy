@@ -54,7 +54,7 @@ def removeCode(inputfilename, outputfilename, token, startToken, endToken):
             # parse line by line
             for line in fp:
 
-                # if a start token has not be detecte recently
+                # if a start token has not been detected recently
                 if not multi:
 
                     #try to detect a start token
@@ -82,7 +82,8 @@ def removeCode(inputfilename, outputfilename, token, startToken, endToken):
                         # do not copy the code and just add an empty line
                         dstfile.write('\n')
                     else:
-                        # otherwise do nothing as we don't want to copy the line neither add an empty line
+                        # otherwise do nothing as we don't want to copy the line neither, 
+                        # just add an empty line
                         multi = False
                         print("Detected end token:"+line)
                     # print line
@@ -179,4 +180,3 @@ if __name__ == "__main__":
             removeCode(inputfile, outputfile, m[0].token, m[0].startToken, m[0].endToken)
     else:
         print('Cannot find the input folder/file!')
-
