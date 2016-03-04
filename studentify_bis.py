@@ -6,8 +6,18 @@ v = sys.version_info
 assert v.major > 2 or (v.major == 2 and v.minor >= 7), "Minimal version required is 2.7"
 
 # useful imports
-import argparse, os, shutil
+import argparse, os, shutil, tempfile
 from functools import partial
+from collections import namedtuple
+
+langInfo = namedtuple('langInfo', 'name, extensions, token, startToken, endToken')
+suppLang = [];
+suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],'//!!', '//<!!','//>!!'))
+suppLang.append(langInfo('matlab', ['.m'],'\%\%!!', '\%\%<!!','\%\%>!!'))
+suppLang.append(langInfo('javascript', ['.js'],'//!!', '//<!!','//>!!'))
+suppLang.append(langInfo('python', ['.py'],'#!!', '#<!!','#>!!'))
+suppLang.append(langInfo('java', ['.java'],'//!!', '//<!!','//>!!'))
+
 
 def studentify_main(args):
     """ Studentify the files given in arguments.
@@ -74,7 +84,39 @@ def studentify_multiple(inputPaths, outputDir):
         studentify_one(i, outputDir, False)
 
 def processFile(filePath):
-    pass
+    """ Process a file to remove lines containing some token.
+
+    filePath must be an absolute path.
+
+    1. Check if file is to be processed (matching filtypes in suppLang)
+    2. Open a temporary file
+    3. Process each line and write result in temporary file
+    4. Rename temporary file into original file
+    """
+    assert os.path.isabs(filePath), "use an absolute path instead: " + filePath
+    base, ext = os.path.splitext(filePath)
+    l = [lang for lang in suppLang if ext in lang.extensions]
+    if not l:
+        print("No supported language found for file " + filePath)
+    else:
+        l = l[0]
+        # open a temporary file
+        with open(filePath, 'r+b') as f, tempfile.NamedTemporaryFile(delete=False) as ftemp:
+            tempPath = ftemp.name
+            # process each line of the file
+            for line in f:
+                newLine = processLine(line)
+                ftemp.write(newLine)
+        # rename temp file into original
+        shutil.copystat(filePath, tempPath)
+        shutil.move(tempPath, filePath)
+
+def processLine(line):
+    """ Search for the pattern in the line.
+    """
+    detected = False
+    newLine = "\n"
+    return newLine
 
 # check that a path (file or folder) exists or not and return it
 def checkPath(path, shouldExist):
