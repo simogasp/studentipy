@@ -13,7 +13,7 @@ from collections import namedtuple
 langInfo = namedtuple('langInfo', 'name, extensions, token, startToken, endToken')
 suppLang = [];
 suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],'//!!', '//<!!','//>!!'))
-suppLang.append(langInfo('matlab', ['.m'],'\%\%!!', '\%\%<!!','\%\%>!!'))
+suppLang.append(langInfo('matlab', ['.m'],'%%!!', '%%<!!','%%>!!'))
 suppLang.append(langInfo('javascript', ['.js'],'//!!', '//<!!','//>!!'))
 suppLang.append(langInfo('python', ['.py'],'#!!', '#<!!','#>!!'))
 suppLang.append(langInfo('java', ['.java'],'//!!', '//<!!','//>!!'))
@@ -99,24 +99,34 @@ def processFile(filePath):
     if not l:
         print("No supported language found for file " + filePath)
     else:
-        l = l[0]
+        lang = l[0]
         # open a temporary file
         with open(filePath, 'r+b') as f, tempfile.NamedTemporaryFile(delete=False) as ftemp:
             tempPath = ftemp.name
+            inCommentBlock = False
             # process each line of the file
             for line in f:
-                newLine = processLine(line)
+                newLine, inCommentBlock = processLine(
+                        line, lang.token, lang.startToken, lang.endToken, inCommentBlock)
                 ftemp.write(newLine)
         # rename temp file into original
         shutil.copystat(filePath, tempPath)
         shutil.move(tempPath, filePath)
 
-def processLine(line):
-    """ Search for the pattern in the line.
+def processLine(line, token, startToken, endToken, inCommentBlock):
+    """ Search for the token in the line.
     """
-    detected = False
-    newLine = "\n"
-    return newLine
+    newLine = line
+    replacementLine = "\n"
+    if inCommentBlock:
+        newLine = replacementLine
+        inCommentBlock = not endToken in line
+    else:
+        inCommentBlock = startToken in line
+        tokenDetected = token in line
+        if inCommentBlock or tokenDetected:
+            newLine = replacementLine
+    return newLine, inCommentBlock
 
 # check that a path (file or folder) exists or not and return it
 def checkPath(path, shouldExist):
