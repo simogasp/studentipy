@@ -22,10 +22,13 @@ suppLang.append(langInfo('java', ['.java'],'//!!', '//<!!','//>!!'))
 def studentify_main(args):
     """ Studentify the files given in arguments.
 
-        args is a namespace containing the following variables
+        args is a namespace containing at least the following variables
             func: (function) this very function
             input: ([string]) the files/folder to studentify
             output: (None or string) the output file/folder
+
+        all other variables in the namespace (for new features)
+        are going to be stored en the "flags" dictionary.
 
         we have 3 basic cases depending on the output variable:
         None   -> Modify files and/or folders in place
@@ -34,31 +37,33 @@ def studentify_main(args):
     """
     outPath = args.output
     inPaths = args.input
+    # flags is the dictionary containing all other flags
+    flags = {k:v for k,v in args.__dict__.iteritems() if k not in ['func','input','output']}
 
     if outPath == None:
         for i in inPaths:
             isFile = os.path.isfile(i)
-            studentify_one(i, i, isFile)
+            studentify_one(i, i, isFile, flags)
     elif len(inPaths)==1:
         isFile = os.path.isfile(outPath) if os.path.exists(outPath) else os.path.isfile(inPaths[0])
-        studentify_one(inPaths[0], outPath, isFile)
+        studentify_one(inPaths[0], outPath, isFile, flags)
     else:
-        studentify_multiple(inPaths, outPath)
+        studentify_multiple(inPaths, outPath, flags)
 
-def studentify_one(inputPath, outputPath, outputIsFile):
+def studentify_one(inputPath, outputPath, outputIsFile, flags):
     inputPath = os.path.abspath(inputPath)
     outputPath = os.path.abspath(outputPath)
     # if we studentify in place
     if inputPath == outputPath:
         if os.path.isfile(inputPath):
             assert outputIsFile, outputPath + " is actually an existing file"
-            print(inputPath + " -> " + inputPath)
-            processFile(inputPath)
+            if flags['debug']: print(inputPath + " -> " + inputPath)
+            processFile(inputPath, flags)
         if os.path.isdir(inputPath):
             assert not outputIsFile, outputPath + " is actually an existing directory"
             lst = os.listdir(inputPath)
             inputPaths = [os.path.join(inputPath, i) for i in lst]
-            studentify_multiple(inputPaths, outputPath)
+            studentify_multiple(inputPaths, outputPath, flags)
     # if the input is a file, it depends on if output is a file also
     elif os.path.isfile(inputPath):
         if outputIsFile:
@@ -66,24 +71,24 @@ def studentify_one(inputPath, outputPath, outputIsFile):
             if not os.path.exists(outputDir):
                 os.makedirs(outputDir)
             shutil.copy(inputPath, outputPath)
-            print(inputPath + " -> " + outputPath)
-            processFile(outputPath)
+            if flags['debug']: print(inputPath + " -> " + outputPath)
+            processFile(outputPath, flags)
         else:
             outputFile = os.path.join(outputPath, os.path.basename(inputPath))
-            studentify_one(inputPath, outputFile, True)
+            studentify_one(inputPath, outputFile, True, flags)
     # else the input is a folder
     else:
         assert not outputIsFile
         lst = os.listdir(inputPath)
         inputPaths = [os.path.join(inputPath, i) for i in lst]
         newOutputDir = os.path.join(outputPath, os.path.basename(inputPath))
-        studentify_multiple(inputPaths, newOutputDir)
+        studentify_multiple(inputPaths, newOutputDir, flags)
 
-def studentify_multiple(inputPaths, outputDir):
+def studentify_multiple(inputPaths, outputDir, flags):
     for i in inputPaths:
-        studentify_one(i, outputDir, False)
+        studentify_one(i, outputDir, False, flags)
 
-def processFile(filePath):
+def processFile(filePath, flags):
     """ Process a file to remove lines containing some token.
 
     filePath must be an absolute path.
@@ -97,7 +102,7 @@ def processFile(filePath):
     base, ext = os.path.splitext(filePath)
     l = [lang for lang in suppLang if ext in lang.extensions]
     if not l:
-        print("No supported language found for file " + filePath)
+        if flags['debug']: print("No supported language found for file " + filePath)
     else:
         lang = l[0]
         # open a temporary file
@@ -107,17 +112,18 @@ def processFile(filePath):
             # process each line of the file
             for line in f:
                 newLine, inCommentBlock = processLine(
-                        line, lang.token, lang.startToken, lang.endToken, inCommentBlock)
+                        line, lang.token, lang.startToken, lang.endToken, inCommentBlock,
+                        flags)
                 ftemp.write(newLine)
         # rename temp file into original
         shutil.copystat(filePath, tempPath)
         shutil.move(tempPath, filePath)
 
-def processLine(line, token, startToken, endToken, inCommentBlock):
+def processLine(line, token, startToken, endToken, inCommentBlock, flags):
     """ Search for the token in the line.
     """
     newLine = line
-    replacementLine = "\n"
+    replacementLine = "\n" if not flags['remove'] else ""
     if inCommentBlock:
         newLine = replacementLine
         inCommentBlock = not endToken in line
@@ -144,7 +150,13 @@ parser.add_argument('input', type=partial(checkPath, shouldExist=True), nargs='+
         help='file or folder to studentify')
 parser.add_argument('-o', '--output', type=partial(checkPath, shouldExist=False),
         help='output file or folder (if input is a folder or contains more than 1 file, this must be a folder)')
+parser.add_argument('-d', '--debug', action='store_true',
+        help='activate debug mode')
+parser.add_argument('--remove', action='store_true',
+        help='remove lines instead of keeping empty lines')
 
 if __name__ == '__main__':
     args = parser.parse_args()
     args.func(args)
+    #flags = {k:v for k,v in args.__dict__.iteritems() if k not in ['func','input','output']}
+    #print(flags)
