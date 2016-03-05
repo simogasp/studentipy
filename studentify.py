@@ -14,13 +14,18 @@ import argparse, os, shutil, tempfile
 from functools import partial
 from collections import namedtuple
 
-langInfo = namedtuple('langInfo', 'name, extensions, token, startToken, endToken')
+langInfo = namedtuple('langInfo', 'name, extensions, commentSymbol, deleteTokens, commentTokens')
 suppLang = [];
-suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],'//!!', '//<!!','//>!!'))
-suppLang.append(langInfo('matlab', ['.m'],'%%!!', '%%<!!','%%>!!'))
-suppLang.append(langInfo('javascript', ['.js'],'//!!', '//<!!','//>!!'))
-suppLang.append(langInfo('python', ['.py'],'#!!', '#<!!','#>!!'))
-suppLang.append(langInfo('java', ['.java'],'//!!', '//<!!','//>!!'))
+suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],
+    '//', ['//!!', '//<!!', '//>!!'], ['//!//', '//<!//', '//>!//']))
+suppLang.append(langInfo('matlab', ['.m'],
+    '%', ['%%!!', '%%<!!', '%%>!!'], ['%%!%%', '%%<!%%', '%%>!%%']))
+suppLang.append(langInfo('javascript', ['.js'],
+    '//', ['//!!', '//<!!', '//>!!'], ['//!//', '//<!//', '//>!//']))
+suppLang.append(langInfo('python', ['.py'],
+    '#', ['#!!', '#<!!', '#>!!'], ['#!#', '#<!#', '#>!#']))
+suppLang.append(langInfo('java', ['.java'],
+    '//', ['//!!', '//<!!', '//>!!'], ['//!//', '//<!//', '//>!//']))
 
 
 def studentify_main(args):
@@ -127,24 +132,24 @@ def processFile(filePath, flags):
             # process each line of the file
             for line in f:
                 newLine, inCommentBlock = processLine(
-                        line, lang.token, lang.startToken, lang.endToken, inCommentBlock,
+                        line, lang, inCommentBlock,
                         flags)
                 ftemp.write(newLine)
         # rename temp file into original
         shutil.copystat(filePath, tempPath)
         shutil.move(tempPath, filePath)
 
-def processLine(line, token, startToken, endToken, inCommentBlock, flags):
-    """ Search for the token in the line.
+def processLine(line, lang, inCommentBlock, flags):
+    """ Search for the tokens in the line.
     """
     newLine = line
     replacementLine = "\n" if not flags['remove'] else ""
     if inCommentBlock:
         newLine = replacementLine
-        inCommentBlock = not endToken in line
+        inCommentBlock = not lang.deleteTokens[2] in line
     else:
-        inCommentBlock = startToken in line
-        tokenDetected = token in line
+        inCommentBlock = lang.deleteTokens[1] in line
+        tokenDetected = lang.deleteTokens[0] in line
         if inCommentBlock or tokenDetected:
             newLine = replacementLine
     return newLine, inCommentBlock
