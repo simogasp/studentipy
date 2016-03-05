@@ -50,7 +50,7 @@ def studentify_main(args):
     flags = {k:v for k,v in args.__dict__.iteritems() if k not in ['func','input','output']}
 
     if outPath == None:
-        if not flags['nobackup']:
+        if not flags['noBackup']:
             backupPath = os.path.abspath("studentify_backup")
             if flags['debug']: print("backing up files in: " + backupPath)
             os.makedirs(backupPath)
@@ -60,7 +60,7 @@ def studentify_main(args):
                 else:
                     shutil.copytree(i, os.path.join(backupPath, os.path.basename(i)))
             if flags['debug']: print("backup done.")
-            print("if you do not want backup, use the --nobackup flags")
+            print("if you do not want backup, use the --noBackup flags")
         for i in inPaths:
             isFile = os.path.isfile(i)
             studentify_one(i, i, isFile, flags)
@@ -195,7 +195,7 @@ parser.add_argument('-d', '--debug', action='store_true',
         help='activate debug mode')
 parser.add_argument('--noBlankLine', action='store_true',
         help='remove lines instead of keeping empty lines')
-parser.add_argument('--nobackup', action='store_true',
+parser.add_argument('--noBackup', action='store_true',
         help='do not create backup when studentifying in place')
 
 if __name__ == '__main__':
