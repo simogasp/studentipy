@@ -128,31 +128,31 @@ def processFile(filePath, flags):
         # open a temporary file
         with open(filePath, 'r+b') as f, tempfile.NamedTemporaryFile(delete=False) as ftemp:
             tempPath = ftemp.name
-            inCommentBlock = False
+            inDeleteBlock = False
             # process each line of the file
             for line in f:
-                newLine, inCommentBlock = processLine(
-                        line, lang, inCommentBlock,
+                newLine, inDeleteBlock = processLine(
+                        line, lang, inDeleteBlock,
                         flags)
                 ftemp.write(newLine)
         # rename temp file into original
         shutil.copystat(filePath, tempPath)
         shutil.move(tempPath, filePath)
 
-def processLine(line, lang, inCommentBlock, flags):
+def processLine(line, lang, inDeleteBlock, flags):
     """ Search for the tokens in the line.
     """
     newLine = line
     replacementLine = "\n" if not flags['remove'] else ""
-    if inCommentBlock:
+    if inDeleteBlock:
         newLine = replacementLine
-        inCommentBlock = not lang.deleteTokens[2] in line
+        inDeleteBlock = not lang.deleteTokens[2] in line
     else:
-        inCommentBlock = lang.deleteTokens[1] in line
+        inDeleteBlock = lang.deleteTokens[1] in line
         tokenDetected = lang.deleteTokens[0] in line
-        if inCommentBlock or tokenDetected:
+        if inDeleteBlock or tokenDetected:
             newLine = replacementLine
-    return newLine, inCommentBlock
+    return newLine, inDeleteBlock
 
 # check that a path (file or folder) exists or not and return it
 def checkPath(path, shouldExist):
