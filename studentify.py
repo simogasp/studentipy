@@ -129,17 +129,18 @@ def processFile(filePath, flags):
         with open(filePath, 'r+b') as f, tempfile.NamedTemporaryFile(delete=False) as ftemp:
             tempPath = ftemp.name
             inDeleteBlock = False
+            inCommentBlock = False
             # process each line of the file
             for line in f:
-                newLine, inDeleteBlock = processLine(
-                        line, lang, inDeleteBlock,
+                newLine, inDeleteBlock, inCommentBlock = processLine(
+                        line, lang, inDeleteBlock, inCommentBlock,
                         flags)
                 ftemp.write(newLine)
         # rename temp file into original
         shutil.copystat(filePath, tempPath)
         shutil.move(tempPath, filePath)
 
-def processLine(line, lang, inDeleteBlock, flags):
+def processLine(line, lang, inDeleteBlock, inCommentBlock, flags):
     """ Search for the tokens in the line.
     """
     newLine = line
@@ -149,10 +150,30 @@ def processLine(line, lang, inDeleteBlock, flags):
         inDeleteBlock = not lang.deleteTokens[2] in line
     else:
         inDeleteBlock = lang.deleteTokens[1] in line
-        tokenDetected = lang.deleteTokens[0] in line
-        if inDeleteBlock or tokenDetected:
+        deleteTokenDetected = lang.deleteTokens[0] in line
+        if inDeleteBlock or deleteTokenDetected:
             newLine = replacementLine
-    return newLine, inDeleteBlock
+        elif inCommentBlock:
+            newLine = lang.commentSymbol + " " + line
+            inCommentBlock = not lang.commentTokens[2] in line
+            # if comment block end here, get rid of the token
+            if not inCommentBlock:
+                newLine = newLine.split(lang.commentTokens[2])[0]+"\n"
+        else:
+            inCommentBlock = lang.commentTokens[1] in line
+            # if a comment block just start here, get rid of the token
+            if inCommentBlock:
+                line = line.split(lang.commentTokens[1])[0]+"\n"
+            else:
+                commentTokenDetected = lang.commentTokens[0] in line
+                line = line.split(lang.commentTokens[0])[0]+"\n"
+            if inCommentBlock or commentTokenDetected:
+                newLine = lang.commentSymbol + " " + line
+    # remove trailing characters
+    if newLine != replacementLine:
+        newLine = newLine.rstrip()+"\n"
+
+    return newLine, inDeleteBlock, inCommentBlock
 
 # check that a path (file or folder) exists or not and return it
 def checkPath(path, shouldExist):
