@@ -144,7 +144,7 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, flags):
     """ Search for the tokens in the line.
     """
     newLine = line
-    replacementLine = "\n" if not flags['remove'] else ""
+    replacementLine = "\n" if not flags['noBlankLine'] else ""
     if inDeleteBlock:
         newLine = replacementLine
         inDeleteBlock = not lang.deleteTokens[2] in line
@@ -193,7 +193,7 @@ parser.add_argument('-o', '--output', type=partial(checkPath, shouldExist=False)
         help='output file or folder (if input is a folder or contains more than 1 file, this must be a folder)')
 parser.add_argument('-d', '--debug', action='store_true',
         help='activate debug mode')
-parser.add_argument('--remove', action='store_true',
+parser.add_argument('--noBlankLine', action='store_true',
         help='remove lines instead of keeping empty lines')
 parser.add_argument('--nobackup', action='store_true',
         help='do not create backup when studentifying in place')
