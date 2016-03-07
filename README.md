@@ -27,38 +27,114 @@ studentify.py input [input ...] [-o OUTPUT]
 The script will remove/comment any line from the original input files
 that ends with a particular comment tag.
 
-Supported languages:
+In a C file, the usable tags are:
 
-| Language   |deleteToken|deleteStartToken|deleteEndToken|commentToken|commentStartToken|commentEndToken|
-| ---------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
-| c/c++        |  `//!!`   |  `//<!!`    |  `//>!!`    |  `//??`    |  `//<??`   |  `//>??`   |
-| matlab       |  `%%!!`   |  `%%<!!`    |  `%%>!!`    |  `%%??`    |  `%%<??`   |  `%%>??`   |
-| javascript   |  `//!!`   |  `//<!!`    |  `//>!!`    |  `//??`    |  `//<??`   |  `//>??`   |
-| python       |  `#!!`    |  `#<!!`     |  `#>!!`     |   `#??`    |   `#<??`   |   `#>??`   |
-| java         |  `//!!`   |  `//<!!`    |  `//>!!`    |  `//??`    |  `//<??`   |  `//>??`   |
+* Deleting tags:
+	* `//!!` : inline delete tag: this line will be removed
+	* `//<!!` : start block delete tag: all lines will be removed until closing tag
+	* `//>!!` : end block delete tag: end the delete block
+* Commenting tags:
+	* `//??` : inline comment tag: this line will be commented
+	* `//<??` : start block comment tag: all lines will be commented until closing tag
+	* `//>??` : end block comment tag: end the comment block
+* Student tags:
+	* `//::` : inline student tag: keep line in student mode but delete in teacher mode
+	* `//<::` : start block student tag
+	* `//>::` : end block student tag
 
-For example in the following piece of C code a total of 5 lines will be removed and 4 commented.
+In other supported languages, just change the `//` (C comment style)
+by the comment of the language (`%` in matlab, `#` in python, ...).
+The supported languages are:
+
+| Language   | Comment symbol | example with delete tag |
+| ---------- | -----------    | ----------------------  |
+| c/c++      |    `//`        |    `//!!`               |
+| javascript |    `//`        |    `//!!`               |
+| java       |    `//`        |    `//!!`               |
+| matlab     |    `%`         |    `%!!`                |
+| python     |    `#`         |    `#!!`                |
+
+For example in the following piece of code:
 
 ```c
-glBegin( GL_QUADS );
-glTexCoord2f( 0, 1 );  //!! this line will be removed
-glVertex2f( -1, -1 );  //!! even this one
-glTexCoord2f( 0, 0 );  //!// this will be commented
-glVertex2f( -1, 1 );
-glTexCoord2f( 1, 0 );
-//<!! All these lines will be removed
-glTexCoord2f( 1, 1 );
-glVertex2f( 1, -1 );
-glEnd( );
-//>!! just until this one
+normal line
+inline delete //!!
+normal line
+start delete block //<!!
+normal line
+end delete block //>!!
 
-// reset the projection matrix
-glMatrixMode( GL_PROJECTION ); //<!// this line will be commented
-glPopMatrix( );
-glMatrixMode( GL_MODELVIEW ); //>!// until there
+normal line
+inline comment //??
+normal line
+start comment block //<??
+normal line
+end comment block //>??
+
+normal line
+// inline student //::
+normal line
+// start student block //<::
+normal line
+// end student block //>::
 ```
 
+will be transformed by the command `studentify.py the_c_file` into:
 
+```c
+normal line
+
+normal line
+
+
+
+
+normal line
+// inline comment
+normal line
+// start comment block
+// normal line
+// end comment block
+
+normal line
+// inline student
+normal line
+// start student block
+normal line
+// end student block
+```
+
+And by the command `studentify.py the_c_file --teach` into:
+
+```c
+normal line
+inline delete
+normal line
+start delete block
+normal line
+end delete block
+
+normal line
+inline comment
+normal line
+start comment block
+normal line
+end comment block
+
+normal line
+
+normal line
+
+
+
+```
+
+To have a complete list of the functionalities available,
+just print the help of the command with:
+
+```shell
+studentify.py -h
+```
 
 -------
 License
