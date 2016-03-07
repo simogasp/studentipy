@@ -145,37 +145,41 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
     """ Search for the tokens in the line.
     """
     replacementLine = "\n" if not flags['noBlankLine'] else ""
+    deleteLine = partial(replaceLine, replacementLine)
+    teach = flags['teacher']
 
     # process a potential delete block structure
     tokens = lang.deleteTokens
-    deleteLine = partial(replaceLine, replacementLine)
+    f_inline     = partial(removeEnd, tokens[0]) if teach else deleteLine
+    f_startBlock = partial(removeEnd, tokens[1]) if teach else deleteLine
+    f_inBlock    = partial(removeEnd, '\n')      if teach else deleteLine
+    f_endBlock   = partial(removeEnd, tokens[2]) if teach else deleteLine
     newLine, inDeleteBlock, modified = processBlockStructure(
             line, inDeleteBlock, tokens,
-            f_inline = deleteLine,
-            f_startBlock = deleteLine,
-            f_inBlock = deleteLine,
-            f_endBlock = deleteLine)
+            f_inline, f_startBlock, f_inBlock, f_endBlock)
 
     # process a potential comment bloc structure
     if not modified:
         tokens = lang.commentTokens
         commentSymbol = lang.commentSymbol
+        f_inline     = partial(removeEnd, tokens[0]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[0])
+        f_startBlock = partial(removeEnd, tokens[1]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[1])
+        f_inBlock    = partial(removeEnd, '\n')      if teach else partial(addStart, commentSymbol)
+        f_endBlock   = partial(removeEnd, tokens[2]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[2])
         newLine, inCommentBlock, modified = processBlockStructure(
                 line, inCommentBlock, tokens,
-                f_inline = partial(addStartAndRemoveEnd, commentSymbol, tokens[0]),
-                f_startBlock = partial(addStartAndRemoveEnd, commentSymbol, tokens[1]),
-                f_inBlock = partial(addStart, commentSymbol),
-                f_endBlock = partial(addStartAndRemoveEnd, commentSymbol, tokens[2]))
+                f_inline, f_startBlock, f_inBlock, f_endBlock)
 
     # process a potential student bloc structure
     if not modified:
         tokens = lang.studentTokens
+        f_inline     = deleteLine if teach else partial(removeEnd, tokens[0])
+        f_startBlock = deleteLine if teach else partial(removeEnd, tokens[1])
+        f_inBlock    = deleteLine if teach else partial(removeEnd, '\n')
+        f_endBlock   = deleteLine if teach else partial(removeEnd, tokens[2])
         newLine, inStudentBlock, modified = processBlockStructure(
                 line, inStudentBlock, tokens,
-                f_inline = partial(removeEnd, tokens[0]),
-                f_startBlock = partial(removeEnd, tokens[1]),
-                f_inBlock = partial(removeEnd, '\n'),
-                f_endBlock = partial(removeEnd, tokens[2]))
+                f_inline, f_startBlock, f_inBlock, f_endBlock)
 
     return newLine, inDeleteBlock, inCommentBlock, inStudentBlock
 
