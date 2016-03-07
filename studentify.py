@@ -14,18 +14,28 @@ import argparse, os, shutil, tempfile
 from functools import partial
 from collections import namedtuple
 
-langInfo = namedtuple('langInfo', 'name, extensions, commentSymbol, deleteTokens, commentTokens, studentTokens')
-suppLang = [];
-suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],
-    '//', ['//!!', '//<!!', '//>!!'], ['//??', '//<??', '//>??'],['//::', '//<::', '//>::']))
-suppLang.append(langInfo('matlab', ['.m'],
-    '%', ['%%!!', '%%<!!', '%%>!!'], ['%%??', '%%<??', '%%>??'],['%%::', '%%<::', '%%>::']))
-suppLang.append(langInfo('javascript', ['.js'],
-    '//', ['//!!', '//<!!', '//>!!'], ['//??', '//<??', '//>??'],['//::', '//<::', '//>::']))
-suppLang.append(langInfo('python', ['.py'],
-    '#', ['#!!', '#<!!', '#>!!'], ['#??', '#<??', '#>??'],['#::', '#<::', '#>::']))
-suppLang.append(langInfo('java', ['.java'],
-    '//', ['//!!', '//<!!', '//>!!'], ['//??', '//<??', '//>??'],['//::', '//<::', '//>::']))
+
+tokenTypes = {'delete':'!!', 'comment':'??', 'student':'::'}
+langInfo = namedtuple('langInfo', 'name, extensions, commentSymbol, tokens')
+suppLang = [
+        langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'], '//', {}),
+        langInfo('matlab', ['.m'], '%', {}),
+        langInfo('javascript', ['.js'], '//', {}),
+        langInfo('python', ['.py'], '#', {}),
+        langInfo('java', ['.java'], '//', {})]
+
+# generate tokens for one language
+def generateTokens(commentSymbol, types):
+    return {k:[
+        commentSymbol + v,       # inline token
+        commentSymbol + '<' + v, # start block token
+        commentSymbol + '>' + v  # end block token
+        ] for k,v in types.items()}
+
+# generate tokens of all languages
+temp = list(suppLang)
+suppLang = [ langInfo(l.name, l.extensions, l.commentSymbol,
+    generateTokens(l.commentSymbol, tokenTypes)) for l in temp]
 
 
 def studentify_main(args):
@@ -47,7 +57,7 @@ def studentify_main(args):
     outPath = args.output
     inPaths = args.input
     # flags is the dictionary containing all other flags
-    flags = {k:v for k,v in args.__dict__.iteritems() if k not in ['func','input','output']}
+    flags = {k:v for k,v in args.__dict__.items() if k not in ['func','input','output']}
 
     if outPath == None:
         if not flags['noBackup']:
@@ -149,7 +159,7 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
     teach = flags['teacher']
 
     # process a potential delete block structure
-    tokens = lang.deleteTokens
+    tokens = lang.tokens['delete']
     f_inline     = partial(removeEnd, tokens[0]) if teach else deleteLine
     f_startBlock = partial(removeEnd, tokens[1]) if teach else deleteLine
     f_inBlock    = partial(removeEnd, '\n')      if teach else deleteLine
@@ -160,7 +170,7 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
 
     # process a potential comment bloc structure
     if not modified:
-        tokens = lang.commentTokens
+        tokens = lang.tokens['comment']
         commentSymbol = lang.commentSymbol
         f_inline     = partial(removeEnd, tokens[0]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[0])
         f_startBlock = partial(removeEnd, tokens[1]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[1])
@@ -172,7 +182,7 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
 
     # process a potential student bloc structure
     if not modified:
-        tokens = lang.studentTokens
+        tokens = lang.tokens['student']
         f_inline     = deleteLine if teach else partial(removeEnd, tokens[0])
         f_startBlock = deleteLine if teach else partial(removeEnd, tokens[1])
         f_inBlock    = deleteLine if teach else partial(removeEnd, '\n')
@@ -263,5 +273,5 @@ parser.add_argument('--teacher', action='store_true',
 if __name__ == '__main__':
     args = parser.parse_args()
     args.func(args)
-    #flags = {k:v for k,v in args.__dict__.iteritems() if k not in ['func','input','output']}
+    #flags = {k:v for k,v in args.__dict__.items() if k not in ['func','input','output']}
     #print(flags)
