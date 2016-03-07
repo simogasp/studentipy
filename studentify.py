@@ -14,18 +14,18 @@ import argparse, os, shutil, tempfile
 from functools import partial
 from collections import namedtuple
 
-langInfo = namedtuple('langInfo', 'name, extensions, commentSymbol, deleteTokens, commentTokens')
+langInfo = namedtuple('langInfo', 'name, extensions, commentSymbol, deleteTokens, commentTokens, studentTokens')
 suppLang = [];
 suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],
-    '//', ['//!!', '//<!!', '//>!!'], ['//??', '//<??', '//>??']))
+    '//', ['//!!', '//<!!', '//>!!'], ['//??', '//<??', '//>??'],['//::', '//<::', '//>::']))
 suppLang.append(langInfo('matlab', ['.m'],
-    '%', ['%%!!', '%%<!!', '%%>!!'], ['%%??', '%%<??', '%%>??']))
+    '%', ['%%!!', '%%<!!', '%%>!!'], ['%%??', '%%<??', '%%>??'],['%%::', '%%<::', '%%>::']))
 suppLang.append(langInfo('javascript', ['.js'],
-    '//', ['//!!', '//<!!', '//>!!'], ['//??', '//<??', '//>??']))
+    '//', ['//!!', '//<!!', '//>!!'], ['//??', '//<??', '//>??'],['//::', '//<::', '//>::']))
 suppLang.append(langInfo('python', ['.py'],
-    '#', ['#!!', '#<!!', '#>!!'], ['#??', '#<??', '#>??']))
+    '#', ['#!!', '#<!!', '#>!!'], ['#??', '#<??', '#>??'],['#::', '#<::', '#>::']))
 suppLang.append(langInfo('java', ['.java'],
-    '//', ['//!!', '//<!!', '//>!!'], ['//??', '//<??', '//>??']))
+    '//', ['//!!', '//<!!', '//>!!'], ['//??', '//<??', '//>??'],['//::', '//<::', '//>::']))
 
 
 def studentify_main(args):
@@ -130,50 +130,106 @@ def processFile(filePath, flags):
             tempPath = ftemp.name
             inDeleteBlock = False
             inCommentBlock = False
+            inStudentBlock = False
             # process each line of the file
             for line in f:
-                newLine, inDeleteBlock, inCommentBlock = processLine(
-                        line, lang, inDeleteBlock, inCommentBlock,
+                newLine, inDeleteBlock, inCommentBlock, inStudentBlock = processLine(
+                        line, lang, inDeleteBlock, inCommentBlock, inStudentBlock,
                         flags)
                 ftemp.write(newLine)
         # rename temp file into original
         shutil.copystat(filePath, tempPath)
         shutil.move(tempPath, filePath)
 
-def processLine(line, lang, inDeleteBlock, inCommentBlock, flags):
+def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags):
     """ Search for the tokens in the line.
     """
-    newLine = line
     replacementLine = "\n" if not flags['noBlankLine'] else ""
-    if inDeleteBlock:
-        newLine = replacementLine
-        inDeleteBlock = not lang.deleteTokens[2] in line
-    else:
-        inDeleteBlock = lang.deleteTokens[1] in line
-        deleteTokenDetected = lang.deleteTokens[0] in line
-        if inDeleteBlock or deleteTokenDetected:
-            newLine = replacementLine
-        elif inCommentBlock:
-            newLine = lang.commentSymbol + " " + line
-            inCommentBlock = not lang.commentTokens[2] in line
-            # if comment block end here, get rid of the token
-            if not inCommentBlock:
-                newLine = newLine.split(lang.commentTokens[2])[0]+"\n"
-        else:
-            inCommentBlock = lang.commentTokens[1] in line
-            # if a comment block just start here, get rid of the token
-            if inCommentBlock:
-                line = line.split(lang.commentTokens[1])[0]+"\n"
-            else:
-                commentTokenDetected = lang.commentTokens[0] in line
-                line = line.split(lang.commentTokens[0])[0]+"\n"
-            if inCommentBlock or commentTokenDetected:
-                newLine = lang.commentSymbol + " " + line
-    # remove trailing characters
-    if newLine != replacementLine:
-        newLine = newLine.rstrip()+"\n"
 
-    return newLine, inDeleteBlock, inCommentBlock
+    # process a potential delete block structure
+    tokens = lang.deleteTokens
+    deleteLine = partial(replaceLine, replacementLine)
+    newLine, inDeleteBlock, modified = processBlockStructure(
+            line, inDeleteBlock, tokens,
+            f_inline = deleteLine,
+            f_startBlock = deleteLine,
+            f_inBlock = deleteLine,
+            f_endBlock = deleteLine)
+
+    # process a potential comment bloc structure
+    if not modified:
+        tokens = lang.commentTokens
+        commentSymbol = lang.commentSymbol
+        newLine, inCommentBlock, modified = processBlockStructure(
+                line, inCommentBlock, tokens,
+                f_inline = partial(addStartAndRemoveEnd, commentSymbol, tokens[0]),
+                f_startBlock = partial(addStartAndRemoveEnd, commentSymbol, tokens[1]),
+                f_inBlock = partial(addStart, commentSymbol),
+                f_endBlock = partial(addStartAndRemoveEnd, commentSymbol, tokens[2]))
+
+    # process a potential student bloc structure
+    if not modified:
+        tokens = lang.studentTokens
+        newLine, inStudentBlock, modified = processBlockStructure(
+                line, inStudentBlock, tokens,
+                f_inline = partial(removeEnd, tokens[0]),
+                f_startBlock = partial(removeEnd, tokens[1]),
+                f_inBlock = partial(removeEnd, '\n'),
+                f_endBlock = partial(removeEnd, tokens[2]))
+
+    return newLine, inDeleteBlock, inCommentBlock, inStudentBlock
+
+
+# a generic function to process a line in a block structure (delete, comment, student, ...)
+def processBlockStructure(
+        line,         # the line to be processed
+        inBlock,      # global knowledge if current line is inside a block
+        tokens,       # the tokens to detect [inlineToken, startToken, endToken]
+        f_inline,     # function transforming the line in inlineToken is detected
+        f_startBlock, # function transforming the line at the start of a block
+        f_inBlock,    # function transforming the line inside a block
+        f_endBlock):  # function transforming the line at the end of a block
+        # -> newLine, inBlock, modified
+
+    inline = tokens[0] in line
+    startBlock = tokens[1] in line
+    endBlock = tokens[2] in line
+    modified = True
+    newLine = line
+
+    if inBlock:
+        if endBlock:
+            newLine = f_endBlock(line)
+            inBlock = False
+        else:
+            newLine = f_inBlock(line)
+    elif startBlock:
+        newLine = f_startBlock(line)
+        inBlock = True
+    elif inline:
+        newLine = f_inline(line)
+    else:
+        modified = False
+
+    return newLine, inBlock, modified
+
+def replaceLine(replacement, line):
+    return replacement
+
+# remove the end of a line, starting at some detected token
+def removeEnd(token, line):
+    return line.split(token)[0].rstrip() + '\n'
+
+# add the token at the start of the line with a space
+def addStart(token, line):
+    return token + ' ' + line
+
+def addStartAndRemoveEnd(startToken, endToken, line):
+    return addStart(startToken, removeEnd(endToken, line))
+
+# a function the compose multiple functions
+def compose(*functions):
+    return functools.reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
 
 # check that a path (file or folder) exists or not and return it
 def checkPath(path, shouldExist):
@@ -197,6 +253,8 @@ parser.add_argument('--noBlankLine', action='store_true',
         help='remove lines instead of keeping empty lines')
 parser.add_argument('--noBackup', action='store_true',
         help='do not create backup when studentifying in place')
+parser.add_argument('--teacher', action='store_true',
+        help='create clean teacher version of the file')
 
 if __name__ == '__main__':
     args = parser.parse_args()
