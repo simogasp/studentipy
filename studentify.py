@@ -162,7 +162,7 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
     tokens = lang.tokens['delete']
     f_inline     = partial(removeEnd, tokens[0]) if teach else deleteLine
     f_startBlock = partial(removeEnd, tokens[1]) if teach else deleteLine
-    f_inBlock    = partial(removeEnd, '\n')      if teach else deleteLine
+    f_inBlock    = identity                      if teach else deleteLine
     f_endBlock   = partial(removeEnd, tokens[2]) if teach else deleteLine
     newLine, inDeleteBlock, modified = processBlockStructure(
             line, inDeleteBlock, tokens,
@@ -174,7 +174,7 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
         commentSymbol = lang.commentSymbol
         f_inline     = partial(removeEnd, tokens[0]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[0])
         f_startBlock = partial(removeEnd, tokens[1]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[1])
-        f_inBlock    = partial(removeEnd, '\n')      if teach else partial(addStart, commentSymbol)
+        f_inBlock    = identity                      if teach else partial(addStart, commentSymbol)
         f_endBlock   = partial(removeEnd, tokens[2]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[2])
         newLine, inCommentBlock, modified = processBlockStructure(
                 line, inCommentBlock, tokens,
@@ -185,7 +185,7 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
         tokens = lang.tokens['student']
         f_inline     = deleteLine if teach else partial(removeEnd, tokens[0])
         f_startBlock = deleteLine if teach else partial(removeEnd, tokens[1])
-        f_inBlock    = deleteLine if teach else partial(removeEnd, '\n')
+        f_inBlock    = deleteLine if teach else identity
         f_endBlock   = deleteLine if teach else partial(removeEnd, tokens[2])
         newLine, inStudentBlock, modified = processBlockStructure(
                 line, inStudentBlock, tokens,
@@ -244,6 +244,10 @@ def addStartAndRemoveEnd(startToken, endToken, line):
 # a function the compose multiple functions
 def compose(*functions):
     return functools.reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
+
+# identity function
+def identity(x):
+    return x
 
 # check that a path (file or folder) exists or not and return it
 def checkPath(path, shouldExist):
