@@ -156,14 +156,14 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
     """
     replacementLine = "\n" if not flags['noBlankLine'] else ""
     deleteLine = partial(replaceLine, replacementLine)
-    teach = flags['teacher']
+    clean = flags['clean']
 
     # process a potential delete block structure
     tokens = lang.tokens['delete']
-    f_inline     = partial(removeEnd, tokens[0]) if teach else deleteLine
-    f_startBlock = partial(removeEnd, tokens[1]) if teach else deleteLine
-    f_inBlock    = identity                      if teach else deleteLine
-    f_endBlock   = partial(removeEnd, tokens[2]) if teach else deleteLine
+    f_inline     = partial(removeEnd, tokens[0]) if clean else deleteLine
+    f_startBlock = partial(removeEnd, tokens[1]) if clean else deleteLine
+    f_inBlock    = identity                      if clean else deleteLine
+    f_endBlock   = partial(removeEnd, tokens[2]) if clean else deleteLine
     newLine, inDeleteBlock, modified = processBlockStructure(
             line, inDeleteBlock, tokens,
             f_inline, f_startBlock, f_inBlock, f_endBlock)
@@ -172,10 +172,10 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
     if not modified:
         tokens = lang.tokens['comment']
         commentSymbol = lang.commentSymbol
-        f_inline     = partial(removeEnd, tokens[0]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[0])
-        f_startBlock = partial(removeEnd, tokens[1]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[1])
-        f_inBlock    = identity                      if teach else partial(addStart, commentSymbol)
-        f_endBlock   = partial(removeEnd, tokens[2]) if teach else partial(addStartAndRemoveEnd, commentSymbol, tokens[2])
+        f_inline     = partial(removeEnd, tokens[0]) if clean else partial(addStartAndRemoveEnd, commentSymbol, tokens[0])
+        f_startBlock = partial(removeEnd, tokens[1]) if clean else partial(addStartAndRemoveEnd, commentSymbol, tokens[1])
+        f_inBlock    = identity                      if clean else partial(addStart, commentSymbol)
+        f_endBlock   = partial(removeEnd, tokens[2]) if clean else partial(addStartAndRemoveEnd, commentSymbol, tokens[2])
         newLine, inCommentBlock, modified = processBlockStructure(
                 line, inCommentBlock, tokens,
                 f_inline, f_startBlock, f_inBlock, f_endBlock)
@@ -183,10 +183,10 @@ def processLine(line, lang, inDeleteBlock, inCommentBlock, inStudentBlock, flags
     # process a potential student bloc structure
     if not modified:
         tokens = lang.tokens['student']
-        f_inline     = deleteLine if teach else partial(removeEnd, tokens[0])
-        f_startBlock = deleteLine if teach else partial(removeEnd, tokens[1])
-        f_inBlock    = deleteLine if teach else identity
-        f_endBlock   = deleteLine if teach else partial(removeEnd, tokens[2])
+        f_inline     = deleteLine if clean else partial(removeEnd, tokens[0])
+        f_startBlock = deleteLine if clean else partial(removeEnd, tokens[1])
+        f_inBlock    = deleteLine if clean else identity
+        f_endBlock   = deleteLine if clean else partial(removeEnd, tokens[2])
         newLine, inStudentBlock, modified = processBlockStructure(
                 line, inStudentBlock, tokens,
                 f_inline, f_startBlock, f_inBlock, f_endBlock)
@@ -271,8 +271,8 @@ parser.add_argument('--noBlankLine', action='store_true',
         help='remove lines instead of keeping empty lines')
 parser.add_argument('--noBackup', action='store_true',
         help='do not create backup when studentifying in place')
-parser.add_argument('--teacher', action='store_true',
-        help='create clean teacher version of the file')
+parser.add_argument('--clean', action='store_true',
+        help='create clean version of the file')
 
 if __name__ == '__main__':
     args = parser.parse_args()

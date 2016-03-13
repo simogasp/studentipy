@@ -38,7 +38,7 @@ In a C file, the usable tags are:
 	* `//<??` : start block comment tag: all lines will be commented until closing tag
 	* `//>??` : end block comment tag: end the comment block
 * Student tags:
-	* `//::` : inline student tag: keep line in student mode but delete in teacher mode
+	* `//::` : inline student tag: keep line in student mode but delete in clean mode
 	* `//<::` : start block student tag
 	* `//>::` : end block student tag
 
@@ -104,7 +104,7 @@ normal line
 // end student block
 ```
 
-And by the command `studentify.py the_c_file --teach` into:
+And by the command `studentify.py the_c_file --clean` into:
 
 ```c
 normal line
