@@ -149,73 +149,71 @@ def process_file(file_path, flags):
         # open a temporary file
         with open(file_path, 'r+b') as original_file, tempfile.NamedTemporaryFile(delete=False) as temp_file:
             temp_path = temp_file.name
-            in_delete_block = False
-            in_comment_block = False
-            in_student_block = False
+            in_block = {'delete':False, 'comment':False, 'student':False}
             # process each line of the file
             for line in original_file:
-                new_line, in_delete_block, in_comment_block, in_student_block = process_line(
-                    line, lang, in_delete_block, in_comment_block, in_student_block,
-                    flags)
+                new_line, in_block = process_line(line, lang, in_block, flags)
                 temp_file.write(new_line)
         # rename temp file into original
         shutil.copystat(file_path, temp_path)
         shutil.move(temp_path, file_path)
 
-def process_line(line, lang, in_delete_block, in_comment_block, in_student_block, flags):
+def process_line(line, lang, in_block, flags):
     """ Search for the tokens in the line.
     """
-    replacementLine = "\n" if not flags['noBlankLine'] else ""
-    deleteLine = partial(replaceLine, replacementLine)
+    replacement_line = "\n" if not flags['noBlankLine'] else ""
+    delete_line = partial(replace_line, replacement_line)
     clean = flags['clean']
 
     # process a potential delete block structure
     tokens = lang.tokens['delete']
-    f_inline      = partial(removeEnd, tokens[0]) if clean else deleteLine
-    f_start_block = partial(removeEnd, tokens[1]) if clean else deleteLine
-    f_in_block    = identity                      if clean else deleteLine
-    f_end_block   = partial(removeEnd, tokens[2]) if clean else deleteLine
-    new_line, in_delete_block, modified = processBlockStructure(
-        line, in_delete_block, tokens,
-        f_inline, f_start_block, f_in_block, f_end_block)
+    processing_functions = {
+        'f_inline'      : partial(remove_end, tokens[0]) if clean else delete_line,
+        'f_start_block' : partial(remove_end, tokens[1]) if clean else delete_line,
+        'f_in_block'    : identity                       if clean else delete_line,
+        'f_end_block'   : partial(remove_end, tokens[2]) if clean else delete_line}
+    new_line, in_block['delete'], modified = process_block_structure(
+        line, in_block['delete'], tokens, processing_functions)
 
     # process a potential comment bloc structure
     if not modified:
         tokens = lang.tokens['comment']
         comment_symbol = lang.comment_symbol
-        f_inline      = partial(removeEnd, tokens[0]) if clean else partial(addStartAndRemoveEnd, comment_symbol, tokens[0])
-        f_start_block = partial(removeEnd, tokens[1]) if clean else partial(addStartAndRemoveEnd, comment_symbol, tokens[1])
-        f_in_block    = identity                      if clean else partial(addStart, comment_symbol)
-        f_end_block   = partial(removeEnd, tokens[2]) if clean else partial(addStartAndRemoveEnd, comment_symbol, tokens[2])
-        new_line, in_comment_block, modified = processBlockStructure(
-            line, in_comment_block, tokens,
-            f_inline, f_start_block, f_in_block, f_end_block)
+        processing_functions = {
+            'f_inline'      : partial(remove_end, tokens[0]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[0]),
+            'f_start_block' : partial(remove_end, tokens[1]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[1]),
+            'f_in_block'    : identity                       if clean else partial(add_start, comment_symbol),
+            'f_end_block'   : partial(remove_end, tokens[2]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[2])}
+        new_line, in_block['comment'], modified = process_block_structure(
+            line, in_block['comment'], tokens, processing_functions)
 
     # process a potential student bloc structure
     if not modified:
         tokens = lang.tokens['student']
-        f_inline      = deleteLine if clean else partial(removeEnd, tokens[0])
-        f_start_block = deleteLine if clean else partial(removeEnd, tokens[1])
-        f_in_block    = deleteLine if clean else identity
-        f_end_block   = deleteLine if clean else partial(removeEnd, tokens[2])
-        new_line, in_student_block, modified = processBlockStructure(
-            line, in_student_block, tokens,
-            f_inline, f_start_block, f_in_block, f_end_block)
+        processing_functions = {
+            'f_inline'      : delete_line if clean else partial(remove_end, tokens[0]),
+            'f_start_block' : delete_line if clean else partial(remove_end, tokens[1]),
+            'f_in_block'    : delete_line if clean else identity,
+            'f_end_block'   : delete_line if clean else partial(remove_end, tokens[2])}
+        new_line, in_block['student'], modified = process_block_structure(
+            line, in_block['student'], tokens, processing_functions)
 
-    return new_line, in_delete_block, in_comment_block, in_student_block
+    return new_line, in_block
 
 
-# a generic function to process a line in a block structure (delete, comment, student, ...)
-def processBlockStructure(
-        line,         # the line to be processed
-        in_block,      # global knowledge if current line is inside a block
-        tokens,       # the tokens to detect [inlineToken, startToken, endToken]
-        f_inline,     # function transforming the line in inlineToken is detected
-        f_start_block, # function transforming the line at the start of a block
-        f_in_block,    # function transforming the line inside a block
-        f_end_block):  # function transforming the line at the end of a block
-        # -> new_line, in_block, modified
-
+def process_block_structure(line, in_block, tokens, processing_functions):
+    """ Process a line in block (delete block, comment block, ...).
+    inputs:
+        line:           # the line to be processed
+        in_block:       # global knowledge if current line is inside a block
+        tokens:         # the tokens to detect [inlineToken, start_token, end_token]
+        processing_functions:
+            f_inline,      # function transforming the line in inlineToken is detected
+            f_start_block, # function transforming the line at the start of a block
+            f_in_block,    # function transforming the line inside a block
+            f_end_block):  # function transforming the line at the end of a block
+    returns: new_line, in_block, modified
+    """
     inline = tokens[0] in line
     start_block = tokens[1] in line
     end_block = tokens[2] in line
@@ -224,69 +222,80 @@ def processBlockStructure(
 
     if in_block:
         if end_block:
-            new_line = f_end_block(line)
+            new_line = processing_functions['f_end_block'](line)
             in_block = False
         else:
-            new_line = f_in_block(line)
+            new_line = processing_functions['f_in_block'](line)
     elif start_block:
-        new_line = f_start_block(line)
+        new_line = processing_functions['f_start_block'](line)
         in_block = True
     elif inline:
-        new_line = f_inline(line)
+        new_line = processing_functions['f_inline'](line)
     else:
         modified = False
 
     return new_line, in_block, modified
 
-def replaceLine(replacement, line):
+def replace_line(replacement, *dummy):
+    """ Just return replacement.
+    """
     return replacement
 
-# remove the end of a line, starting at some detected token
-def removeEnd(token, line):
+def remove_end(token, line):
+    """ Remove everything starting from the token.
+    """
     return line.split(token)[0].rstrip() + '\n'
 
-# add the token at the start of the line with a space
-def addStart(token, line):
+def add_start(token, line):
+    """ Add the token at the start of the line with a space.
+    """
     return token + ' ' + line
 
-def addStartAndRemoveEnd(startToken, endToken, line):
-    return addStart(startToken, removeEnd(endToken, line))
+def add_start_and_remove_end(start_token, end_token, line):
+    """ Combine add_start and remove_end functions.
+    """
+    return add_start(start_token, remove_end(end_token, line))
 
-# a function the compose multiple functions
 def compose(*functions):
-    return functools.reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
+    """ Compose multiple functions.
+    """
+    # pylint: disable=undefined-variable
+    return reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
 
-# identity function
 def identity(x):
+    """ Return input.
+    """
+    # pylint: disable=invalid-name
     return x
 
-# check that a path (file or folder) exists or not and return it
-def checkPath(path, shouldExist):
+def check_path(path, should_exist):
+    """ Check that a path (file or folder) exists or not and return it.
+    """
     path = os.path.normpath(path)
-    if shouldExist != os.path.exists(path):
-        msg = "path " + ("does not" if shouldExist else "already") + " exist: " + path
+    if should_exist != os.path.exists(path):
+        msg = "path " + ("does not" if should_exist else "already") + " exist: " + path
         raise argparse.ArgumentTypeError(msg)
     return path
 
 # arguments configuration
-parser = argparse.ArgumentParser()
-parser.set_defaults(func=studentify_main)
-parser.add_argument('-v', '--version', action='version', version='2.0')
-parser.add_argument('input', type=partial(checkPath, shouldExist=True), nargs='+',
+PARSER = argparse.ArgumentParser()
+PARSER.set_defaults(func=studentify_main)
+PARSER.add_argument('-v', '--version', action='version', version='2.0')
+PARSER.add_argument('input', type=partial(check_path, should_exist=True), nargs='+',
                     help='file or folder to studentify')
-parser.add_argument('-o', '--output', type=partial(checkPath, shouldExist=False),
+PARSER.add_argument('-o', '--output', type=partial(check_path, should_exist=False),
                     help='output file or folder (if input is a folder or contains more than 1 file, this must be a folder)')
-parser.add_argument('-d', '--debug', action='store_true',
+PARSER.add_argument('-d', '--debug', action='store_true',
                     help='activate debug mode')
-parser.add_argument('--noBlankLine', action='store_true',
+PARSER.add_argument('--noBlankLine', action='store_true',
                     help='remove lines instead of keeping empty lines')
-parser.add_argument('--noBackup', action='store_true',
+PARSER.add_argument('--noBackup', action='store_true',
                     help='do not create backup when studentifying in place')
-parser.add_argument('--clean', action='store_true',
+PARSER.add_argument('--clean', action='store_true',
                     help='create clean version of the file')
 
 if __name__ == '__main__':
-    args = parser.parse_args()
-    args.func(args)
+    ARGS = PARSER.parse_args()
+    ARGS.func(ARGS)
     #flags = {k:v for k,v in args.__dict__.items() if k not in ['func','input','output']}
     #print(flags)
