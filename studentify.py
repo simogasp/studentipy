@@ -1,182 +1,301 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import sys, getopt, os, re, shutil
-import argparse
+""" Studentify code for practical work.
+"""
+
+# pylint configuration
+# pylint: disable=bad-whitespace, line-too-long, multiple-imports, multiple-statements
+
+# useful imports
+from __future__ import print_function
+import sys, argparse, os, shutil, tempfile
+from functools import partial
 from collections import namedtuple
 
-langInfo = namedtuple('langInfo', 'name, extensions, token, startToken, endToken')
-suppLang = [];
-suppLang.append(langInfo('c/c++', ['.c','.cpp','.h','.hpp','.cc', '.cxx'],'//!!', '//<!!','//>!!'))
-suppLang.append(langInfo('matlab', ['.m'],'\%\%!!', '\%\%<!!','\%\%>!!'))
-suppLang.append(langInfo('javascript', ['.js'],'//!!', '//<!!','//>!!'))
-suppLang.append(langInfo('python', ['.py'],'#!!', '#<!!','#>!!'))
-suppLang.append(langInfo('java', ['.java'],'//!!', '//<!!','//>!!'))
+# check python version newer than 2.7
+V = sys.version_info
+assert V.major > 2 or (V.major == 2 and V.minor >= 7), "Minimal version required is 2.7"
 
+TOKEN_TYPES = {'delete':'!!', 'comment':'??', 'student':'::'}
+LangInfo = namedtuple('LangInfo', 'name, extensions, comment_symbol, tokens')
+SUPP_LANG = [
+    LangInfo('c/c++', ['.c', '.cpp', '.h', '.hpp', '.cc', '.cxx'], '//', {}),
+    LangInfo('matlab', ['.m'], '%', {}),
+    LangInfo('javascript', ['.js'], '//', {}),
+    LangInfo('python', ['.py'], '#', {}),
+    LangInfo('java', ['.java'], '//', {})]
 
-
-def help(name):
-    """ print the usage for the program
+# generate tokens for one language
+def generate_tokens(comment_symbol, types):
+    """ Generate all types of tokens for one comment symbol.
     """
-    print('Usage:\n\t'+name+' -i <input file or dir> -o <output file or dir>')
-    print("\nSupported languages:\nLanguage\t\ttoken\t\tstartToken\t\tendToken")
-    for i in suppLang:
-        print(i.name+"\t\t\t"+i.token+"\t\t"+i.startToken+"\t\t"+i.endToken)
+    return {k:[
+        comment_symbol + v,       # inline token
+        comment_symbol + '<' + v, # start block token
+        comment_symbol + '>' + v  # end block token
+        ] for k, v in types.items()}
+
+# generate tokens of all languages
+TEMP = list(SUPP_LANG)
+SUPP_LANG = [LangInfo(l.name, l.extensions, l.comment_symbol,
+                      generate_tokens(l.comment_symbol, TOKEN_TYPES)) for l in TEMP]
 
 
+def studentify_main(arguments):
+    """ Studentify the files given in arguments.
 
-def removeCode(inputfilename, outputfilename, token, startToken, endToken):
-    """ create a copy of a file by removing the line of code ended by a comment containing the token
-         inputfilename is the file to copy
-         outputfilename is the destination file
-         token is the commentary token to detect in order to remove the line    
+        arguments is a namespace containing at least the following variables
+            func: (function) this very function
+            input: ([string]) the files/folder to studentify
+            output: (None or string) the output file/folder
+
+        all other variables in the namespace (for new features)
+        are going to be stored en the "flags" dictionary.
+
+        we have 3 basic cases depending on the output variable:
+        None   -> Modify files and/or folders in place
+        file   -> Input must contain only one file
+        folder -> Copy inputs in this folder
     """
+    out_path = arguments.output
+    in_paths = arguments.input
+    # flags is the dictionary containing all other flags
+    flags = {k:v for k, v in arguments.__dict__.items() if k not in ['func', 'input', 'output']}
 
-    if os.path.isfile(inputfilename):
-
-        # any token without text in front, the token can be follow by text
-        pattern = re.compile(r"[ \t]*" + token +".*[ \t]*$", re.UNICODE)
-        # any tokenr without text in front, the token can be follow by text
-        multiStart = re.compile(r'^[ \t]*'+startToken+'.*[ \t]*', re.UNICODE)
-        # any token without text in front, the token can be follow by text
-        multiEnd = re.compile(r'^[ \t]*'+endToken+'.*[ \t]*', re.UNICODE)
-        # open the file
-        with open(inputfilename) as fp:
-            # create the new file
-            dstfile = open(outputfilename,'w')
-
-            # used to keep track of multiline 
-            multi = False
-
-            # parse line by line
-            for line in fp:
-
-                # if a start token has not been detected recently
-                if not multi:
-
-                    #try to detect a start token
-                    s = multiStart.search(line)
-
-                    if s == None:
-
-                        # if the line do not match copy it to the destination file
-                        r = pattern.search(line)
-                        if r == None:
-                            dstfile.write(line)
-                        else:
-                            dstfile.write('\n')
-
-                    else:
-                        print("Detected start token:"+line)
-                        multi = True;
-                        # do nothing
+    if out_path is None:
+        if not flags['noBackup']:
+            backup_path = os.path.abspath("studentify_backup")
+            if flags['debug']: print("backing up files in: " + backup_path)
+            os.makedirs(backup_path)
+            for i in in_paths:
+                if os.path.isfile(i):
+                    shutil.copy(i, backup_path)
                 else:
-
-                    #try to detect a end token
-                    s = multiEnd.search(line)
-
-                    if s == None:
-                        # do not copy the code and just add an empty line
-                        dstfile.write('\n')
-                    else:
-                        # otherwise do nothing as we don't want to copy the line neither, 
-                        # just add an empty line
-                        multi = False
-                        print("Detected end token:"+line)
-                    # print line
-            
-            #close the files
-            dstfile.close();
-
-
-
-def parseDirectory(inputDir, outputDir):
-    """ parse the input directory recursively and recreate the same repository
-        in output parsing the files and removing the lines tagged with the proper token   
-    """
-    # create the output directory
-    os.makedirs(outputDir)
-
-    # list the elements in the input directory
-    for dirname, dirnames, filenames in os.walk(inputDir):
-        # print("\nDirectories in "+dirname)
-        newbase = os.path.normpath(re.compile('^'+inputDir).sub(outputDir+os.sep,dirname))+os.sep
-        # print newbase
-        # print path to all subdirectories first.
-        for subdirname in dirnames:
-            # create the a copy of the directory
-            os.makedirs(os.path.normpath(os.path.join(newbase, subdirname)))
-            print(os.path.normpath(os.path.join(newbase, subdirname)))
-        # print path to all filenames.
-        # print("Filenames")
-        for filename in filenames:
-            # print os.path.normpath(os.path.join(newbase, filename))
-            n, ext = os.path.splitext(filename)
-            m = [x for x in suppLang if ext in x.extensions]
-            if not m:
-                print("No supported language found for file "+filename)
-                shutil.copyfile(os.path.join(dirname, filename), os.path.normpath(os.path.join(newbase, filename)))
-            else:
-                # if it is a known language apply the transformation with the given token
-                print("Detected "+m[0].name+" language for "+filename+"\tProcessing...")
-                removeCode(os.path.join(dirname, filename), os.path.normpath(os.path.join(newbase, filename)), m[0].token, m[0].startToken, m[0].endToken)
-            
-
-
-
-
-
-if __name__ == "__main__":       
-
-    parser = argparse.ArgumentParser(description='A simple script to generate theversion of a code to be given to the student.'+
-                    'The script parses the input file and create a copy of it removing the lines tagged with a special comment tag.'+
-                    'It automatically detects the language. More over it can be used on a directory to recursively create a copy of it parsing all the files in it.')
-    parser.add_argument('-i', '--inputFile', required=True, help='The input file or directory to parse')
-    parser.add_argument('-o', '--outputFile', required=True, help='The output file or directory')
-    args = parser.parse_args()         
-
-    # parse the input arguments
-    inputfile = args.inputFile
-    outputfile = args.outputFile
-
-    os.path.normpath(inputfile)
-    os.path.normpath(outputfile)
-    # check the input arguments
-    if inputfile == outputfile:
-        print("Can't use the same file as input and output")
-        sys.exit()
-
-    print('Input is "', inputfile)
-    print('Output is "', outputfile)
-
-    # if it's a folder
-    if os.path.isdir(inputfile):
-        print("Parsing directory is not available (yet)")
-        # check whether the outdir already exist
-        if os.path.exists(outputfile):
-            # if so ask the user what to do (delete or stop)
-            answer = input("The output directory "+outputfile+" already exists. Do you want to remove it? [Y/n]: ")
-            if answer.lower() in ["y", "yes"] or answer == "":
-                shutil.rmtree(outputfile)
-            else:
-                print("Aborting...")
-                sys.exit()
-        parseDirectory(inputfile, outputfile) 
-
-    # otherwise if it is a file
-    elif os.path.isfile(inputfile):
-        # get the extension
-        base, ext = os.path.splitext(inputfile)
-        m = [x for x in suppLang if ext in x.extensions]
-        if not m:
-            print("No supported language found for file "+inputfile)
-            sys.exit()
-        else:
-            # if it is a known language apply the transformation with the given token
-            print("Detected "+m[0].name+" language for "+inputfile+"\nProcessing...\n")
-            removeCode(inputfile, outputfile, m[0].token, m[0].startToken, m[0].endToken)
+                    shutil.copytree(i, os.path.join(backup_path, os.path.basename(i)))
+            if flags['debug']: print("backup done.")
+            print("if you do not want backup, use the --noBackup flags")
+        for i in in_paths:
+            is_file = os.path.isfile(i)
+            studentify_one(i, i, is_file, flags)
+    elif len(in_paths) == 1:
+        is_file = os.path.isfile(out_path) if os.path.exists(out_path) else os.path.isfile(in_paths[0])
+        studentify_one(in_paths[0], out_path, is_file, flags)
     else:
-        print('Cannot find the input folder/file!')
+        studentify_multiple(in_paths, out_path, flags)
+
+def studentify_one(input_path, output_path, output_is_file, flags):
+    """ Studentify the only file or folder given in input_path.
+    """
+    input_path = os.path.abspath(input_path)
+    output_path = os.path.abspath(output_path)
+    # if we studentify in place
+    if input_path == output_path:
+        if os.path.isfile(input_path):
+            assert output_is_file, output_path + " is actually an existing file"
+            if flags['debug']: print(input_path + " -> " + input_path)
+            process_file(input_path, flags)
+        if os.path.isdir(input_path):
+            assert not output_is_file, output_path + " is actually an existing directory"
+            lst = os.listdir(input_path)
+            input_paths = [os.path.join(input_path, i) for i in lst]
+            studentify_multiple(input_paths, output_path, flags)
+    # if the input is a file, it depends on if output is a file also
+    elif os.path.isfile(input_path):
+        if output_is_file:
+            output_dir = os.path.dirname(output_path)
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            shutil.copy(input_path, output_path)
+            if flags['debug']: print(input_path + " -> " + output_path)
+            process_file(output_path, flags)
+        else:
+            output_file = os.path.join(output_path, os.path.basename(input_path))
+            studentify_one(input_path, output_file, True, flags)
+    # else the input is a folder
+    else:
+        assert not output_is_file
+        lst = os.listdir(input_path)
+        input_paths = [os.path.join(input_path, i) for i in lst]
+        newoutput_dir = os.path.join(output_path, os.path.basename(input_path))
+        studentify_multiple(input_paths, newoutput_dir, flags)
+
+def studentify_multiple(input_paths, output_dir, flags):
+    """ Studentify every input given in argument to the output directory.
+    """
+    for i in input_paths:
+        studentify_one(i, output_dir, False, flags)
+
+def process_file(file_path, flags):
+    """ Process a file to remove lines containing some token.
+
+    file_path must be an absolute path.
+
+    1. Check if file is to be processed (matching filtypes in SUPP_LANG)
+    2. Open a temporary file
+    3. Process each line and write result in temporary file
+    4. Rename temporary file into original file
+    """
+    assert os.path.isabs(file_path), "use an absolute path instead: " + file_path
+    dummy_base, ext = os.path.splitext(file_path)
+    file_lang = [lang for lang in SUPP_LANG if ext in lang.extensions]
+    if not file_lang:
+        if flags['debug']: print("No supported language found for file " + file_path)
+    else:
+        lang = file_lang[0]
+        # open a temporary file
+        with open(file_path, 'r+b') as original_file, tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_path = temp_file.name
+            in_block = {'delete':False, 'comment':False, 'student':False}
+            # process each line of the file
+            for line in original_file:
+                new_line, in_block = process_line(line, lang, in_block, flags)
+                temp_file.write(new_line)
+        # rename temp file into original
+        shutil.copystat(file_path, temp_path)
+        shutil.move(temp_path, file_path)
+
+def process_line(line, lang, in_block, flags):
+    """ Search for the tokens in the line.
+    """
+    replacement_line = "\n" if not flags['noBlankLine'] else ""
+    delete_line = partial(replace_line, replacement_line)
+    clean = flags['clean']
+
+    # process a potential delete block structure
+    tokens = lang.tokens['delete']
+    processing_functions = {
+        'f_inline'      : partial(remove_end, tokens[0]) if clean else delete_line,
+        'f_start_block' : partial(remove_end, tokens[1]) if clean else delete_line,
+        'f_in_block'    : identity                       if clean else delete_line,
+        'f_end_block'   : partial(remove_end, tokens[2]) if clean else delete_line}
+    new_line, in_block['delete'], modified = process_block_structure(
+        line, in_block['delete'], tokens, processing_functions)
+
+    # process a potential comment bloc structure
+    if not modified:
+        tokens = lang.tokens['comment']
+        comment_symbol = lang.comment_symbol
+        processing_functions = {
+            'f_inline'      : partial(remove_end, tokens[0]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[0]),
+            'f_start_block' : partial(remove_end, tokens[1]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[1]),
+            'f_in_block'    : identity                       if clean else partial(add_start, comment_symbol),
+            'f_end_block'   : partial(remove_end, tokens[2]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[2])}
+        new_line, in_block['comment'], modified = process_block_structure(
+            line, in_block['comment'], tokens, processing_functions)
+
+    # process a potential student bloc structure
+    if not modified:
+        tokens = lang.tokens['student']
+        processing_functions = {
+            'f_inline'      : delete_line if clean else partial(remove_end, tokens[0]),
+            'f_start_block' : delete_line if clean else partial(remove_end, tokens[1]),
+            'f_in_block'    : delete_line if clean else identity,
+            'f_end_block'   : delete_line if clean else partial(remove_end, tokens[2])}
+        new_line, in_block['student'], modified = process_block_structure(
+            line, in_block['student'], tokens, processing_functions)
+
+    return new_line, in_block
+
+
+def process_block_structure(line, in_block, tokens, processing_functions):
+    """ Process a line in block (delete block, comment block, ...).
+    inputs:
+        line:           # the line to be processed
+        in_block:       # global knowledge if current line is inside a block
+        tokens:         # the tokens to detect [inlineToken, start_token, end_token]
+        processing_functions:
+            f_inline,      # function transforming the line in inlineToken is detected
+            f_start_block, # function transforming the line at the start of a block
+            f_in_block,    # function transforming the line inside a block
+            f_end_block):  # function transforming the line at the end of a block
+    returns: new_line, in_block, modified
+    """
+    inline = tokens[0] in line
+    start_block = tokens[1] in line
+    end_block = tokens[2] in line
+    modified = True
+    new_line = line
+
+    if in_block:
+        if end_block:
+            new_line = processing_functions['f_end_block'](line)
+            in_block = False
+        else:
+            new_line = processing_functions['f_in_block'](line)
+    elif start_block:
+        new_line = processing_functions['f_start_block'](line)
+        in_block = True
+    elif inline:
+        new_line = processing_functions['f_inline'](line)
+    else:
+        modified = False
+
+    return new_line, in_block, modified
+
+def replace_line(replacement, *dummy):
+    """ Just return replacement.
+    """
+    return replacement
+
+def remove_end(token, line):
+    """ Remove everything starting from the token.
+    """
+    return line.split(token)[0].rstrip() + '\n'
+
+def add_start(token, line):
+    """ Add the token at the start of the line with a space.
+    """
+    return token + ' ' + line
+
+def add_start_and_remove_end(start_token, end_token, line):
+    """ Combine add_start and remove_end functions.
+    """
+    return add_start(start_token, remove_end(end_token, line))
+
+def compose(*functions):
+    """ Compose multiple functions.
+    """
+    # pylint: disable=undefined-variable
+    return reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
+
+def identity(x):
+    """ Return input.
+    """
+    # pylint: disable=invalid-name
+    return x
+
+def check_path(path, should_exist):
+    """ Check that a path (file or folder) exists or not and return it.
+    """
+    path = os.path.normpath(path)
+    if should_exist != os.path.exists(path):
+        msg = "path " + ("does not" if should_exist else "already") + " exist: " + path
+        raise argparse.ArgumentTypeError(msg)
+    return path
+
+# arguments configuration
+PARSER = argparse.ArgumentParser()
+PARSER.set_defaults(func=studentify_main)
+PARSER.add_argument('-v', '--version', action='version', version='2.0')
+PARSER.add_argument('input', type=partial(check_path, should_exist=True), nargs='+',
+                    help='file or folder to studentify')
+PARSER.add_argument('-o', '--output', type=partial(check_path, should_exist=False),
+                    help='output file or folder (if input is a folder or contains more than 1 file, this must be a folder)')
+PARSER.add_argument('-d', '--debug', action='store_true',
+                    help='activate debug mode')
+PARSER.add_argument('--noBlankLine', action='store_true',
+                    help='remove lines instead of keeping empty lines')
+PARSER.add_argument('--noBackup', action='store_true',
+                    help='do not create backup when studentifying in place')
+PARSER.add_argument('--clean', action='store_true',
+                    help='create clean version of the file')
+
+if __name__ == '__main__':
+    ARGS = PARSER.parse_args()
+    ARGS.func(ARGS)
+    #flags = {k:v for k,v in args.__dict__.items() if k not in ['func','input','output']}
+    #print(flags)
