@@ -82,9 +82,13 @@ def studentify_main(arguments):
             is_file = os.path.isfile(i)
             studentify_one(i, i, is_file, flags)
     elif len(in_paths) == 1:
+        if not arguments.force:
+            check_path(out_path, False)
         is_file = os.path.isfile(out_path) if os.path.exists(out_path) else os.path.isfile(in_paths[0])
         studentify_one(in_paths[0], out_path, is_file, flags)
     else:
+        if not arguments.force:
+            check_path(out_path, False)
         studentify_multiple(in_paths, out_path, flags)
 
 def studentify_one(input_path, output_path, output_is_file, flags):
@@ -283,8 +287,10 @@ PARSER.set_defaults(func=studentify_main)
 PARSER.add_argument('-v', '--version', action='version', version='2.0')
 PARSER.add_argument('input', type=partial(check_path, should_exist=True), nargs='+',
                     help='file or folder to studentify')
-PARSER.add_argument('-o', '--output', type=partial(check_path, should_exist=False),
+PARSER.add_argument('-o', '--output',
                     help='output file or folder (if input is a folder or contains more than 1 file, this must be a folder)')
+PARSER.add_argument('-f', '--force', action='store_true',
+                    help='allow overwriting output file or folder')
 PARSER.add_argument('-d', '--debug', action='store_true',
                     help='activate debug mode')
 PARSER.add_argument('--noBlankLine', action='store_true',
