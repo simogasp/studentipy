@@ -13,14 +13,14 @@
 # useful imports
 from __future__ import print_function
 import sys, argparse, os, shutil, tempfile
-from functools import partial
+from functools import partial, reduce
 from collections import namedtuple
 
 # check python version newer than 2.7
 V = sys.version_info
 assert V.major > 2 or (V.major == 2 and V.minor >= 7), "Minimal version required is 2.7"
 
-TOKEN_TYPES = {'delete':'!!', 'comment':'??', 'student':'::'}
+TOKEN_TYPES = {'delete':'!!', 'comment':'??', 'replace':'++', 'student':'::'}
 LangInfo = namedtuple('LangInfo', 'name, extensions, comment_symbol, tokens')
 SUPP_LANG = [
     LangInfo('c/c++', ['.c', '.cpp', '.h', '.hpp', '.cc', '.cxx'], '//', {}),
@@ -153,7 +153,7 @@ def process_file(file_path, flags):
         # open a temporary file
         with open(file_path, 'r+b') as original_file, tempfile.NamedTemporaryFile(delete=False) as temp_file:
             temp_path = temp_file.name
-            in_block = {'delete':False, 'comment':False, 'student':False}
+            in_block = {'delete':False, 'comment':False, 'replace':False, 'student':False}
             # process each line of the file
             for line in original_file:
                 new_line, in_block = process_line(line, lang, in_block, flags)
@@ -166,7 +166,7 @@ def process_line(line, lang, in_block, flags):
     """ Search for the tokens in the line.
     """
     replacement_line = "\n" if not flags['noBlankLine'] else ""
-    delete_line = partial(replace_line, replacement_line)
+    delete_line = partial(replace_by, replacement_line)
     clean = flags['clean']
 
     # process a potential delete block structure
@@ -190,6 +190,18 @@ def process_line(line, lang, in_block, flags):
             'f_end_block'   : partial(remove_end, tokens[2]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[2])}
         new_line, in_block['comment'], modified = process_block_structure(
             line, in_block['comment'], tokens, processing_functions)
+
+    # process a potential replace bloc structure
+    if not modified:
+        tokens = lang.tokens['replace']
+        comment_symbol = lang.comment_symbol
+        processing_functions = {
+            'f_inline'      : partial(remove_end, tokens[0]) if clean else partial(after_token, True, True, tokens[0]),
+            'f_start_block' : partial(remove_end, tokens[1]) if clean else partial(after_token, True, True, tokens[1]),
+            'f_in_block'    : partial(remove_end, comment_symbol) if clean else partial(after_token, True, True, comment_symbol),
+            'f_end_block'   : partial(remove_end, tokens[2]) if clean else partial(after_token, True, True, tokens[2]),}
+        new_line, in_block['replace'], modified = process_block_structure(
+            line, in_block['replace'], tokens, processing_functions)
 
     # process a potential student bloc structure
     if not modified:
@@ -240,10 +252,27 @@ def process_block_structure(line, in_block, tokens, processing_functions):
 
     return new_line, in_block, modified
 
-def replace_line(replacement, *dummy):
+def indent_chars(line):
+    """ Retrieve the indentation part of a line.
+    """
+    nb_indent_chars = len(line) - len(line.lstrip())
+    return line[0:nb_indent_chars]
+
+def replace_by(replacement, *dummy):
     """ Just return replacement.
     """
     return replacement
+
+def after_token(keep_indent, lstripped, token, line):
+    """ Return the part of a line after a token.
+    The token must be present to not raise an error.
+    """
+    new_line = line.split(token,1)[1]
+    if lstripped:
+        new_line = new_line.lstrip()
+    if keep_indent:
+        new_line = indent_chars(line) + new_line.lstrip()
+    return new_line
 
 def remove_end(token, line):
     """ Remove everything starting from the token.
