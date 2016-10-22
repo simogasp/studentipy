@@ -198,7 +198,7 @@ def process_line(line, lang, in_block, flags):
         processing_functions = {
             'f_inline'      : partial(remove_end, tokens[0]) if clean else partial(after_token, True, True, tokens[0]),
             'f_start_block' : partial(remove_end, tokens[1]) if clean else partial(after_token, True, True, tokens[1]),
-            'f_in_block'    : partial(remove_end, comment_symbol) if clean else partial(after_token, True, True, comment_symbol),
+            'f_in_block'    : partial(remove_end, tokens[0]) if clean else partial(after_token, True, True, tokens[0]),
             'f_end_block'   : partial(remove_end, tokens[2]) if clean else partial(after_token, True, True, tokens[2]),}
         new_line, in_block['replace'], modified = process_block_structure(
             line, in_block['replace'], tokens, processing_functions)

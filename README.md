@@ -94,8 +94,8 @@ normal line
 line that changes //++ line visible to student // why not a comment here
 normal line
 first line to change //<++ first
-second line to change // second
-third line to change  // third
+second line to change //++ second
+third line to change  //++ third
 fourth line to change //>++ fourth
 ```
 
