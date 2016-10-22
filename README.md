@@ -91,10 +91,10 @@ normal line
 
 // example of replacing tag
 normal line
-line that changes //++ line visible to student
+line that changes //++ line visible to student // why not a comment here
 normal line
 first line to change //<++ first
-second line to change // second // why not a comment here
+second line to change // second
 third line to change  // third
 fourth line to change //>++ fourth
 ```
@@ -128,10 +128,10 @@ normal line
 
 // example of replacing tag
 normal line
-line visible to student
+line visible to student // why not a comment here
 normal line
 first
-second // why not a comment here
+second
 third
 fourth
 ```
@@ -168,7 +168,7 @@ normal line
 line that changes
 normal line
 first line to change
-second line to change // why not a comment here
+second line to change
 third line to change
 fourth line to change
 ```
