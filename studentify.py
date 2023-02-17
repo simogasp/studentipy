@@ -83,12 +83,22 @@ def studentify_main(arguments):
             studentify_one(i, i, is_file, flags)
     elif len(in_paths) == 1:
         if not arguments.force:
-            check_path(out_path, False)
+            try:
+                check_path(out_path, False)
+            except argparse.ArgumentTypeError as inst:
+                print(inst)
+                print("Consider using --force option if you want to overwrite the file")
+                exit(-1)
         is_file = os.path.isfile(out_path) if os.path.exists(out_path) else os.path.isfile(in_paths[0])
         studentify_one(in_paths[0], out_path, is_file, flags)
     else:
         if not arguments.force:
-            check_path(out_path, False)
+            try:
+                check_path(out_path, False)
+            except argparse.ArgumentTypeError as inst:
+                print(inst)
+                print("Consider using --force option if you want to overwrite the directory")
+                exit(-1)
         studentify_multiple(in_paths, out_path, flags)
 
 def studentify_one(input_path, output_path, output_is_file, flags):
