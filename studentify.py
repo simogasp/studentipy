@@ -20,7 +20,7 @@ from collections import namedtuple
 V = sys.version_info
 assert V.major > 2 or (V.major == 2 and V.minor >= 7), "Minimal version required is 2.7"
 
-TOKEN_TYPES = {'delete':'!!', 'comment':'??', 'replace':'++', 'student':'::'}
+TOKEN_TYPES = {'delete': '!!', 'comment': '??', 'replace': '++', 'student': '::'}
 LangInfo = namedtuple('LangInfo', 'name, extensions, comment_symbol, tokens')
 SUPP_LANG = [
     LangInfo('c/c++', ['.c', '.cpp', '.h', '.hpp', '.cc', '.cxx'], '//', {}),
@@ -29,15 +29,17 @@ SUPP_LANG = [
     LangInfo('python', ['.py'], '#', {}),
     LangInfo('java', ['.java'], '//', {})]
 
+
 # generate tokens for one language
 def generate_tokens(comment_symbol, types):
     """ Generate all types of tokens for one comment symbol.
     """
-    return {k:[
-        comment_symbol + v,       # inline token
-        comment_symbol + '<' + v, # start block token
+    return {k: [
+        comment_symbol + v,  # inline token
+        comment_symbol + '<' + v,  # start block token
         comment_symbol + '>' + v  # end block token
-        ] for k, v in types.items()}
+    ] for k, v in types.items()}
+
 
 # generate tokens of all languages
 TEMP = list(SUPP_LANG)
@@ -64,7 +66,7 @@ def studentify_main(arguments):
     out_path = arguments.output
     in_paths = arguments.input
     # flags is the dictionary containing all other flags
-    flags = {k:v for k, v in arguments.__dict__.items() if k not in ['func', 'input', 'output']}
+    flags = {k: v for k, v in arguments.__dict__.items() if k not in ['func', 'input', 'output']}
 
     if out_path is None:
         if not flags['noBackup']:
@@ -100,6 +102,7 @@ def studentify_main(arguments):
                 print("Consider using --force option if you want to overwrite the directory")
                 exit(-1)
         studentify_multiple(in_paths, out_path, flags)
+
 
 def studentify_one(input_path, output_path, output_is_file, flags):
     """ Studentify the only file or folder given in input_path.
@@ -137,11 +140,13 @@ def studentify_one(input_path, output_path, output_is_file, flags):
         newoutput_dir = os.path.join(output_path, os.path.basename(input_path))
         studentify_multiple(input_paths, newoutput_dir, flags)
 
+
 def studentify_multiple(input_paths, output_dir, flags):
     """ Studentify every input given in argument to the output directory.
     """
     for i in input_paths:
         studentify_one(i, output_dir, False, flags)
+
 
 def process_file(file_path, flags):
     """ Process a file to remove lines containing some token.
@@ -163,7 +168,7 @@ def process_file(file_path, flags):
         # open a temporary file
         with open(file_path, 'r+b') as original_file, tempfile.NamedTemporaryFile(delete=False) as temp_file:
             temp_path = temp_file.name
-            in_block = {'delete':False, 'comment':False, 'replace':False, 'student':False}
+            in_block = {'delete': False, 'comment': False, 'replace': False, 'student': False}
             # process each line of the file
             for line in original_file:
                 new_line, in_block = process_line(line, lang, in_block, flags)
@@ -171,6 +176,7 @@ def process_file(file_path, flags):
         # rename temp file into original
         shutil.copystat(file_path, temp_path)
         shutil.move(temp_path, file_path)
+
 
 def process_line(line, lang, in_block, flags):
     """ Search for the tokens in the line.
@@ -182,10 +188,10 @@ def process_line(line, lang, in_block, flags):
     # process a potential delete block structure
     tokens = lang.tokens['delete']
     processing_functions = {
-        'f_inline'      : partial(remove_end, tokens[0]) if clean else delete_line,
-        'f_start_block' : partial(remove_end, tokens[1]) if clean else delete_line,
-        'f_in_block'    : identity                       if clean else delete_line,
-        'f_end_block'   : partial(remove_end, tokens[2]) if clean else delete_line}
+        'f_inline': partial(remove_end, tokens[0]) if clean else delete_line,
+        'f_start_block': partial(remove_end, tokens[1]) if clean else delete_line,
+        'f_in_block': identity if clean else delete_line,
+        'f_end_block': partial(remove_end, tokens[2]) if clean else delete_line}
     new_line, in_block['delete'], modified = process_block_structure(
         line, in_block['delete'], tokens, processing_functions)
 
@@ -194,10 +200,13 @@ def process_line(line, lang, in_block, flags):
         tokens = lang.tokens['comment']
         comment_symbol = lang.comment_symbol
         processing_functions = {
-            'f_inline'      : partial(remove_end, tokens[0]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[0]),
-            'f_start_block' : partial(remove_end, tokens[1]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[1]),
-            'f_in_block'    : identity                       if clean else partial(add_start, comment_symbol),
-            'f_end_block'   : partial(remove_end, tokens[2]) if clean else partial(add_start_and_remove_end, comment_symbol, tokens[2])}
+            'f_inline': partial(remove_end, tokens[0]) if clean else partial(add_start_and_remove_end, comment_symbol,
+                                                                             tokens[0]),
+            'f_start_block': partial(remove_end, tokens[1]) if clean else partial(add_start_and_remove_end,
+                                                                                  comment_symbol, tokens[1]),
+            'f_in_block': identity if clean else partial(add_start, comment_symbol),
+            'f_end_block': partial(remove_end, tokens[2]) if clean else partial(add_start_and_remove_end,
+                                                                                comment_symbol, tokens[2])}
         new_line, in_block['comment'], modified = process_block_structure(
             line, in_block['comment'], tokens, processing_functions)
 
@@ -206,10 +215,10 @@ def process_line(line, lang, in_block, flags):
         tokens = lang.tokens['replace']
         comment_symbol = lang.comment_symbol
         processing_functions = {
-            'f_inline'      : partial(remove_end, tokens[0]) if clean else partial(after_token, True, True, tokens[0]),
-            'f_start_block' : partial(remove_end, tokens[1]) if clean else partial(after_token, True, True, tokens[1]),
-            'f_in_block'    : partial(remove_end, tokens[0]) if clean else partial(after_token, True, True, tokens[0]),
-            'f_end_block'   : partial(remove_end, tokens[2]) if clean else partial(after_token, True, True, tokens[2]),}
+            'f_inline': partial(remove_end, tokens[0]) if clean else partial(after_token, True, True, tokens[0]),
+            'f_start_block': partial(remove_end, tokens[1]) if clean else partial(after_token, True, True, tokens[1]),
+            'f_in_block': partial(remove_end, tokens[0]) if clean else partial(after_token, True, True, tokens[0]),
+            'f_end_block': partial(remove_end, tokens[2]) if clean else partial(after_token, True, True, tokens[2]), }
         new_line, in_block['replace'], modified = process_block_structure(
             line, in_block['replace'], tokens, processing_functions)
 
@@ -217,10 +226,10 @@ def process_line(line, lang, in_block, flags):
     if not modified:
         tokens = lang.tokens['student']
         processing_functions = {
-            'f_inline'      : delete_line if clean else partial(remove_end, tokens[0]),
-            'f_start_block' : delete_line if clean else partial(remove_end, tokens[1]),
-            'f_in_block'    : delete_line if clean else identity,
-            'f_end_block'   : delete_line if clean else partial(remove_end, tokens[2])}
+            'f_inline': delete_line if clean else partial(remove_end, tokens[0]),
+            'f_start_block': delete_line if clean else partial(remove_end, tokens[1]),
+            'f_in_block': delete_line if clean else identity,
+            'f_end_block': delete_line if clean else partial(remove_end, tokens[2])}
         new_line, in_block['student'], modified = process_block_structure(
             line, in_block['student'], tokens, processing_functions)
 
@@ -262,42 +271,49 @@ def process_block_structure(line, in_block, tokens, processing_functions):
 
     return new_line, in_block, modified
 
+
 def indent_chars(line):
     """ Retrieve the indentation part of a line.
     """
     nb_indent_chars = len(line) - len(line.lstrip())
     return line[0:nb_indent_chars]
 
+
 def replace_by(replacement, *dummy):
     """ Just return replacement.
     """
     return replacement
 
+
 def after_token(keep_indent, lstripped, token, line):
     """ Return the part of a line after a token.
     The token must be present to not raise an error.
     """
-    new_line = line.split(token,1)[1]
+    new_line = line.split(token, 1)[1]
     if lstripped:
         new_line = new_line.lstrip()
     if keep_indent:
         new_line = indent_chars(line) + new_line.lstrip()
     return new_line
 
+
 def remove_end(token, line):
     """ Remove everything starting from the token.
     """
     return line.split(token)[0].rstrip() + '\n'
+
 
 def add_start(token, line):
     """ Add the token at the start of the line with a space.
     """
     return token + ' ' + line
 
+
 def add_start_and_remove_end(start_token, end_token, line):
     """ Combine add_start and remove_end functions.
     """
     return add_start(start_token, remove_end(end_token, line))
+
 
 def compose(*functions):
     """ Compose multiple functions.
@@ -305,11 +321,13 @@ def compose(*functions):
     # pylint: disable=undefined-variable
     return reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
 
+
 def identity(x):
     """ Return input.
     """
     # pylint: disable=invalid-name
     return x
+
 
 def check_path(path, should_exist):
     """ Check that a path (file or folder) exists or not and return it.
@@ -319,6 +337,7 @@ def check_path(path, should_exist):
         msg = "path " + ("does not" if should_exist else "already") + " exist: " + path
         raise argparse.ArgumentTypeError(msg)
     return path
+
 
 # arguments configuration
 PARSER = argparse.ArgumentParser()
@@ -342,5 +361,5 @@ PARSER.add_argument('--clean', action='store_true',
 if __name__ == '__main__':
     ARGS = PARSER.parse_args()
     ARGS.func(ARGS)
-    #flags = {k:v for k,v in args.__dict__.items() if k not in ['func','input','output']}
-    #print(flags)
+    # flags = {k:v for k,v in args.__dict__.items() if k not in ['func','input','output']}
+    # print(flags)
