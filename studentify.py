@@ -166,7 +166,7 @@ def process_file(file_path, flags):
     else:
         lang = file_lang[0]
         # open a temporary file
-        with open(file_path, 'r+b') as original_file, tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        with open(file_path, 'r+') as original_file, tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
             temp_path = temp_file.name
             in_block = {'delete': False, 'comment': False, 'replace': False, 'student': False}
             # process each line of the file
