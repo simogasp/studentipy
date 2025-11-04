@@ -1,0 +1,10 @@
+[project]
+name = "studentipy"
+version = "1.0.0"
+description = "A simple script to generate the version of a code to be given to the students."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
