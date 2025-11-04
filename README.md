@@ -1,5 +1,6 @@
 # Studentipy
 
+[![Tests](https://github.com/simogasp/studentipy/actions/workflows/test.yml/badge.svg)](https://github.com/simogasp/studentipy/actions/workflows/test.yml)
 [![CodeQL](https://github.com/simogasp/studentipy/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/simogasp/studentipy/actions/workflows/github-code-scanning/codeql)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/46add6ebc63a4d16b6893550da420387)](https://app.codacy.com/gh/simogasp/studentipy/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
