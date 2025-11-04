@@ -1,6 +1,6 @@
 """Functional tests for studentify.py"""
 import sys
-import subprocess
+import subprocess # nosec B404
 from pathlib import Path
 import pytest
 
@@ -49,7 +49,7 @@ def test_studentify_cpp_default_mode(tmp_path, studentify_script, fixtures_dir):
     output_file = tmp_path / "result.cpp"
 
     # Run studentify in default mode
-    result = subprocess.run(
+    result = subprocess.run( # nosec B404
         [
             sys.executable,
             str(studentify_script),
@@ -60,6 +60,7 @@ def test_studentify_cpp_default_mode(tmp_path, studentify_script, fixtures_dir):
         ],
         capture_output=True,
         text=True,
+        shell=False,  # nosec B404
     )
 
     assert result.returncode == 0, f"studentify failed: {result.stderr or result.stdout}"
@@ -94,7 +95,7 @@ def test_studentify_cpp_clean_mode(tmp_path, studentify_script, fixtures_dir):
     output_file = tmp_path / "result.cpp"
 
     # Run studentify in clean mode
-    result = subprocess.run(
+    result = subprocess.run(   # nosec B404
         [
             sys.executable,
             str(studentify_script),
@@ -106,6 +107,7 @@ def test_studentify_cpp_clean_mode(tmp_path, studentify_script, fixtures_dir):
         ],
         capture_output=True,
         text=True,
+        shell=False,  # nosec B404
     )
 
     assert result.returncode == 0, f"studentify failed: {result.stderr or result.stdout}"
@@ -134,13 +136,13 @@ def test_studentify_in_place(tmp_path, studentify_script, fixtures_dir):
     """
     input_file = fixtures_dir / "cpp" / "input.cpp"
     expected_file = fixtures_dir / "cpp" / "expected.cpp"
-    
+
     # Copy input to temp location
     test_file = tmp_path / "test.cpp"
     test_file.write_text(input_file.read_text(encoding="utf-8"), encoding="utf-8")
 
     # Run studentify in place with noBackup
-    result = subprocess.run(
+    result = subprocess.run( # nosec B404
         [
             sys.executable,
             str(studentify_script),
@@ -149,6 +151,7 @@ def test_studentify_in_place(tmp_path, studentify_script, fixtures_dir):
         ],
         capture_output=True,
         text=True,
+        shell=False,  # nosec B404
     )
 
     assert result.returncode == 0, f"studentify failed: {result.stderr or result.stdout}"
