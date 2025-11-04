@@ -169,7 +169,8 @@ third line to change
 fourth line to change
 ```
 
-To have a complete list of the functionalities available, print the help of the command with:
+To have a complete list of the functionalities available,
+print the help of the command with:
 
 ```shell
 studentify.py -h
