@@ -71,14 +71,16 @@ def studentify_main(arguments):
     if out_path is None:
         if not flags['noBackup']:
             backup_path = os.path.abspath("studentify_backup")
-            if flags['debug']: print("backing up files in: " + backup_path)
+            if flags['debug']:
+                print(f"backing up files in: {backup_path}")
             os.makedirs(backup_path)
             for i in in_paths:
                 if os.path.isfile(i):
                     shutil.copy(i, backup_path)
                 else:
                     shutil.copytree(i, os.path.join(backup_path, os.path.basename(i)))
-            if flags['debug']: print("backup done.")
+            if flags['debug']:
+                print("backup done.")
             print("if you do not want backup, use the --noBackup flags")
         for i in in_paths:
             is_file = os.path.isfile(i)
@@ -112,11 +114,12 @@ def studentify_one(input_path, output_path, output_is_file, flags):
     # if we studentify in place
     if input_path == output_path:
         if os.path.isfile(input_path):
-            assert output_is_file, output_path + " is actually an existing file"
-            if flags['debug']: print(input_path + " -> " + input_path)
+            assert output_is_file, f"{output_path} is actually an existing file"
+            if flags['debug']:
+                print(f"{input_path} -> {input_path}")
             process_file(input_path, flags)
         if os.path.isdir(input_path):
-            assert not output_is_file, output_path + " is actually an existing directory"
+            assert not output_is_file, f"{output_path} is actually an existing directory"
             lst = os.listdir(input_path)
             input_paths = [os.path.join(input_path, i) for i in lst]
             studentify_multiple(input_paths, output_path, flags)
@@ -127,7 +130,8 @@ def studentify_one(input_path, output_path, output_is_file, flags):
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
             shutil.copy(input_path, output_path)
-            if flags['debug']: print(input_path + " -> " + output_path)
+            if flags['debug']:
+                print(f"{input_path} -> {output_path}")
             process_file(output_path, flags)
         else:
             output_file = os.path.join(output_path, os.path.basename(input_path))
@@ -162,7 +166,8 @@ def process_file(file_path, flags):
     dummy_base, ext = os.path.splitext(file_path)
     file_lang = [lang for lang in SUPP_LANG if ext in lang.extensions]
     if not file_lang:
-        if flags['debug']: print("No supported language found for file " + file_path)
+        if flags['debug']:
+            print(f"No supported language found for file {file_path}")
     else:
         lang = file_lang[0]
         # open a temporary file
