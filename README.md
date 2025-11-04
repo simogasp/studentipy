@@ -10,7 +10,7 @@ Folders given in input are recursively parsed.
 
 ## Requirements
 
-The script has been developed and tested using Python 2 (>=2.7).
+The script has been developed and tested using Python 3.
 
 ## Usage
 
