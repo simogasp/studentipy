@@ -1,5 +1,7 @@
 # Studentipy
 
+[![CodeQL](https://github.com/simogasp/studentipy/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/simogasp/studentipy/actions/workflows/github-code-scanning/codeql) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/46add6ebc63a4d16b6893550da420387)](https://app.codacy.com/gh/simogasp/studentipy/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 ## Introduction
 
 A simple script to generate the version of a code to be given to the students.
