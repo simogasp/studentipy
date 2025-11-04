@@ -11,14 +11,14 @@
 # pylint: disable=bad-whitespace, line-too-long, multiple-imports, multiple-statements
 
 # useful imports
-from __future__ import print_function
-import sys, argparse, os, shutil, tempfile
-from functools import partial, reduce
-from collections import namedtuple
 
-# check python version newer than 2.7
-V = sys.version_info
-assert V.major > 2 or (V.major == 2 and V.minor >= 7), "Minimal version required is 2.7"
+import argparse
+import os
+import shutil
+import sys
+import tempfile
+from collections import namedtuple
+from functools import partial, reduce
 
 TOKEN_TYPES = {'delete': '!!', 'comment': '??', 'replace': '++', 'student': '::'}
 LangInfo = namedtuple('LangInfo', 'name, extensions, comment_symbol, tokens')
@@ -90,7 +90,7 @@ def studentify_main(arguments):
             except argparse.ArgumentTypeError as inst:
                 print(inst)
                 print("Consider using --force option if you want to overwrite the file")
-                exit(-1)
+                sys.exit(1)
         is_file = os.path.isfile(out_path) if os.path.exists(out_path) else os.path.isfile(in_paths[0])
         studentify_one(in_paths[0], out_path, is_file, flags)
     else:
@@ -100,7 +100,7 @@ def studentify_main(arguments):
             except argparse.ArgumentTypeError as inst:
                 print(inst)
                 print("Consider using --force option if you want to overwrite the directory")
-                exit(-1)
+                sys.exit(1)
         studentify_multiple(in_paths, out_path, flags)
 
 
