@@ -1,9 +1,12 @@
 # Studentipy
 
+[![CodeQL](https://github.com/simogasp/studentipy/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/simogasp/studentipy/actions/workflows/github-code-scanning/codeql)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/46add6ebc63a4d16b6893550da420387)](https://app.codacy.com/gh/simogasp/studentipy/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+
 ## Introduction
 
 A simple script to generate the version of a code to be given to the students.
-The script parses the input files and folders and removes/comment the lines tagged
+The script parses the input files and folders and removes/comments the lines tagged
 with a special comment tag.
 It automatically detects the language.
 Folders given in input are recursively parsed.
@@ -48,14 +51,14 @@ by the comment of the language (`%` in matlab, `#` in python, ...).
 The supported languages are:
 
 | Language   | Comment symbol | deleting tag | commenting tag | student tag | replacing tag |
-| ---------- | -----------    | ------------ | -------------- | ----------- | ------------- |
-| c/c++      |    `//`        |    `//!!`    |    `//??`      |    `//::`   |    `//++`     |
-| javascript |    `//`        |    `//!!`    |    `//??`      |    `//::`   |    `//++`     |
-| java       |    `//`        |    `//!!`    |    `//??`      |    `//::`   |    `//++`     |
-| matlab     |    `%`         |    `%!!`     |    `%??`       |    `%::`    |    `%++`      |
-| python     |    `#`         |    `#!!`     |    `#??`       |    `#::`    |    `#++`      |
+|------------|----------------|--------------|----------------|-------------|---------------|
+| c/c++      | `//`           | `//!!`       | `//??`         | `//::`      | `//++`        |
+| javascript | `//`           | `//!!`       | `//??`         | `//::`      | `//++`        |
+| java       | `//`           | `//!!`       | `//??`         | `//::`      | `//++`        |
+| matlab     | `%`            | `%!!`        | `%??`          | `%::`       | `%++`         |
+| python     | `#`            | `#!!`        | `#??`          | `#::`       | `#++`         |
 
-For example in the following piece of code:
+For example, in the following piece of code:
 
 ```c
 // example of deleting tag
@@ -167,7 +170,7 @@ fourth line to change
 ```
 
 To have a complete list of the functionalities available,
-just print the help of the command with:
+print the help of the command with:
 
 ```shell
 studentify.py -h
