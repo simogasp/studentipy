@@ -1,9 +1,6 @@
-TP Tool(s)
-===========================================
+# Studentipy
 
-------------
-Introduction
-------------
+## Introduction
 
 A simple script to generate the version of a code to be given to the students.
 The script parses the input files and folders and removes/comment the lines tagged
@@ -11,43 +8,40 @@ with a special comment tag.
 It automatically detects the language.
 Folders given in input are recursively parsed.
 
---------
-Requirements
---------
+## Requirements
 
 The script has been developed and tested using Python 2 (>=2.7).
 
---------
-Usage
---------
+## Usage
 
 ```shell
 studentify.py input [input ...] [-o OUTPUT]
 ```
+
 The script will remove/comment/replace any line from the original input files
 that ends with a particular comment tag.
 
 In a C file, the usable tags are:
 
 * Deleting tags: these tags remove the line(s) of code in the student version.
-	* `//!!` : inline delete tag: this line will be removed
-	* `//<!!` : start block delete tag: all lines will be removed until end tag
-	* `//>!!` : end block delete tag: end the delete block
+  * `//!!` : inline delete tag: this line will be removed
+  * `//<!!` : start block delete tag: all lines will be removed until end tag
+  * `//>!!` : end block delete tag: end the delete block
 
 * Commenting tags: these tags comment out the line(s) of code in the student version.
-	* `//??` : inline comment tag: this line will be commented
-	* `//<??` : start block comment tag: all lines will be commented until end tag
-	* `//>??` : end block comment tag: end the comment block
+  * `//??` : inline comment tag: this line will be commented
+  * `//<??` : start block comment tag: all lines will be commented until end tag
+  * `//>??` : end block comment tag: end the comment block
 
-* Student tags: 
-	* `//::` : inline student tag: keep line in student mode but delete in clean mode
-	* `//<::` : start block student tag
-	* `//>::` : end block student tag
+* Student tags:
+  * `//::` : inline student tag: keep line in student mode but delete in clean mode
+  * `//<::` : start block student tag
+  * `//>::` : end block student tag
 
 * Replacing tags: these tags replace the line(s) with alternative code in the student version.
-	* `//++` : inline replacing tag: remove the code before the tag and replace it with what comes after the tag
-	* `//<++` : start block replacing tag
-	* `//>++` : end block replacing tag
+  * `//++` : inline replacing tag: remove the code before the tag and replace it with what comes after the tag
+  * `//<++` : start block replacing tag
+  * `//>++` : end block replacing tag
 
 In other supported languages, just change the `//` (C comment style)
 by the comment of the language (`%` in matlab, `#` in python, ...).
@@ -60,7 +54,6 @@ The supported languages are:
 | java       |    `//`        |    `//!!`    |    `//??`      |    `//::`   |    `//++`     |
 | matlab     |    `%`         |    `%!!`     |    `%??`       |    `%::`    |    `%++`      |
 | python     |    `#`         |    `#!!`     |    `#??`       |    `#::`    |    `#++`      |
-
 
 For example in the following piece of code:
 
@@ -180,23 +173,16 @@ just print the help of the command with:
 studentify.py -h
 ```
 
--------
-License
--------
+## License
 
 See [LICENSE](LICENSE) text file
 
--------
-Authors
--------
+## Authors
 
 * Simone Gasparini
 * Matthieu Pizenberg
 
+## Contact
 
----------
-Contact
----------
-
-* Simone Gasparini simone.gasparini@enseeiht.fr
-* Matthieu Pizenberg matthieu.pizenberg@gmail.com
+* Simone Gasparini <simone.gasparini@enseeiht.fr>
+* Matthieu Pizenberg <matthieu.pizenberg@gmail.com>
