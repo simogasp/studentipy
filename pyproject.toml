@@ -21,6 +21,7 @@ omit = [
     "reports/*",
 ]
 concurrency = ["multiprocessing"]
+data_file = "reports/coverage/.coverage"
 
 [tool.coverage.report]
 exclude_lines = [
@@ -34,7 +35,7 @@ exclude_lines = [
 ]
 
 [tool.coverage.html]
-directory = "reports/htmlcov"
+directory = "reports/coverage/html"
 
 [tool.coverage.xml]
-output = "reports/coverage.xml"
+output = "reports/coverage/coverage.xml"
