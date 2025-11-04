@@ -254,9 +254,9 @@ def process_block_structure(line, in_block, tokens, processing_functions):
             f_end_block):  # function transforming the line at the end of a block
     returns: new_line, in_block, modified
     """
-    inline = tokens[0] in line
-    start_block = tokens[1] in line
-    end_block = tokens[2] in line
+    inline = tokens[0] in str(line)
+    start_block = tokens[1] in str(line)
+    end_block = tokens[2] in str(line)
     modified = True
     new_line = line
 
