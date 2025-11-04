@@ -1,7 +1,6 @@
 """Unit tests for studentify.py functions"""
 import sys
 from pathlib import Path
-import pytest
 
 # Add parent directory to path to import studentify
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
