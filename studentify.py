@@ -345,26 +345,27 @@ def check_path(path, should_exist):
 
 
 # arguments configuration
-PARSER = argparse.ArgumentParser()
-PARSER.set_defaults(func=studentify_main)
-PARSER.add_argument('-v', '--version', action='version', version='2.0')
-PARSER.add_argument('input', type=partial(check_path, should_exist=True), nargs='+',
+parser = argparse.ArgumentParser()
+parser.set_defaults(func=studentify_main)
+parser.add_argument('-v', '--version', action='version', version='2.0')
+parser.add_argument('input', type=partial(check_path, should_exist=True), nargs='+',
                     help='file or folder to studentify')
-PARSER.add_argument('-o', '--output',
-                    help='output file or folder (if input is a folder or contains more than 1 file, this must be a folder)')
-PARSER.add_argument('-f', '--force', action='store_true',
+parser.add_argument('-o', '--output',
+                    help='output file or folder (if input is a folder or contains more than 1 file, this must be a '
+                         'folder)')
+parser.add_argument('-f', '--force', action='store_true',
                     help='allow overwriting output file or folder')
-PARSER.add_argument('-d', '--debug', action='store_true',
+parser.add_argument('-d', '--debug', action='store_true',
                     help='activate debug mode')
-PARSER.add_argument('--noBlankLine', action='store_true',
+parser.add_argument('--noBlankLine', action='store_true',
                     help='remove lines instead of keeping empty lines')
-PARSER.add_argument('--noBackup', action='store_true',
+parser.add_argument('--noBackup', action='store_true',
                     help='do not create backup when studentifying in place')
-PARSER.add_argument('--clean', action='store_true',
+parser.add_argument('--clean', action='store_true',
                     help='create clean version of the file')
 
 if __name__ == '__main__':
-    ARGS = PARSER.parse_args()
-    ARGS.func(ARGS)
+    args = parser.parse_args()
+    args.func(args)
     # flags = {k:v for k,v in args.__dict__.items() if k not in ['func','input','output']}
     # print(flags)
