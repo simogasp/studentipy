@@ -163,7 +163,7 @@ def process_file(file_path, flags):
     4. Rename temporary file into original file
     """
     assert os.path.isabs(file_path), "use an absolute path instead: " + file_path
-    dummy_base, ext = os.path.splitext(file_path)
+    _, ext = os.path.splitext(file_path)
     file_lang = [lang for lang in SUPP_LANG if ext in lang.extensions]
     if not file_lang:
         if flags['debug']:
