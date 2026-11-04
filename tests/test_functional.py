@@ -1,8 +1,8 @@
 """Functional tests for studentify.py"""
+import subprocess  # nosec B404
 import sys
-import subprocess # nosec B404
 from pathlib import Path
-from typing import List, Optional
+
 import pytest
 
 
@@ -32,8 +32,8 @@ def normalize_text(text: str) -> str:
 def run_studentify(
     studentify_script: Path,
     input_file: Path,
-    output_file: Optional[Path] = None,
-    extra_args: Optional[List[str]] = None
+    output_file: Path | None = None,
+    extra_args: list[str] | None = None
 ) -> subprocess.CompletedProcess:
     """Run the studentify script with given arguments.
     
