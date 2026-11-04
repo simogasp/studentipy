@@ -61,6 +61,7 @@ def run_studentify(
         cmd,
         capture_output=True,
         text=True,
+        check=True,
         shell=False,  # nosec B404
     )
 
