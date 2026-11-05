@@ -18,7 +18,9 @@ import shutil
 import sys
 import tempfile
 from collections import namedtuple
+from collections.abc import Callable
 from functools import partial, reduce
+from typing import Any
 
 TOKEN_TYPES = {'delete': '!!', 'comment': '??', 'replace': '++', 'student': '::'}
 LangInfo = namedtuple('LangInfo', 'name, extensions, comment_symbol, tokens')
@@ -31,7 +33,7 @@ SUPP_LANG = [
 
 
 # generate tokens for one language
-def generate_tokens(comment_symbol, types):
+def generate_tokens(comment_symbol : str, types : dict):
     """ Generate all types of tokens for one comment symbol.
     """
     return {k: [
@@ -106,7 +108,7 @@ def studentify_main(arguments):
         studentify_multiple(in_paths, out_path, flags)
 
 
-def studentify_one(input_path, output_path, output_is_file, flags):
+def studentify_one(input_path : str, output_path : str, output_is_file : bool, flags : dict):
     """ Studentify the only file or folder given in input_path.
     """
     input_path = os.path.abspath(input_path)
@@ -145,14 +147,14 @@ def studentify_one(input_path, output_path, output_is_file, flags):
         studentify_multiple(input_paths, newoutput_dir, flags)
 
 
-def studentify_multiple(input_paths, output_dir, flags):
+def studentify_multiple(input_paths : list[str], output_dir : str, flags : dict):
     """ Studentify every input given in argument to the output directory.
     """
     for i in input_paths:
         studentify_one(i, output_dir, False, flags)
 
 
-def process_file(file_path, flags):
+def process_file(file_path : str, flags : dict):
     """ Process a file to remove lines containing some token.
 
     file_path must be an absolute path.
@@ -183,7 +185,7 @@ def process_file(file_path, flags):
         shutil.move(temp_path, file_path)
 
 
-def process_line(line, lang, in_block, flags):
+def process_line(line : str, lang, in_block: dict, flags: dict) -> tuple[str, dict]:
     """ Search for the tokens in the line.
     """
     replacement_line = "\n" if not flags['noBlankLine'] else ""
@@ -241,7 +243,7 @@ def process_line(line, lang, in_block, flags):
     return new_line, in_block
 
 
-def process_block_structure(line, in_block, tokens, processing_functions):
+def process_block_structure(line : str, in_block: bool, tokens: list[str], processing_functions: dict) -> tuple[str, bool, bool]:
     """ Process a line in block (delete block, comment block, ...).
     inputs:
         line:           # the line to be processed
@@ -277,20 +279,20 @@ def process_block_structure(line, in_block, tokens, processing_functions):
     return new_line, in_block, modified
 
 
-def indent_chars(line):
+def indent_chars(line : str) -> str:
     """ Retrieve the indentation part of a line.
     """
     nb_indent_chars = len(line) - len(line.lstrip())
     return line[0:nb_indent_chars]
 
 
-def replace_by(replacement, *dummy):
+def replace_by(replacement : str, *dummy) -> str:
     """ Just return replacement.
     """
     return replacement
 
 
-def after_token(keep_indent, lstripped, token, line):
+def after_token(keep_indent : bool, lstripped : bool, token : str, line : str) -> str:
     """ Return the part of a line after a token.
     The token must be present to not raise an error.
     """
@@ -302,39 +304,39 @@ def after_token(keep_indent, lstripped, token, line):
     return new_line
 
 
-def remove_end(token, line):
+def remove_end(token : str, line : str) -> str:
     """ Remove everything starting from the token.
     """
     return line.split(token)[0].rstrip() + '\n'
 
 
-def add_start(token, line):
+def add_start(token : str, line : str) -> str:
     """ Add the token at the start of the line with a space.
     """
     return token + ' ' + line
 
 
-def add_start_and_remove_end(start_token, end_token, line):
+def add_start_and_remove_end(start_token : str, end_token : str, line : str) -> str:
     """ Combine add_start and remove_end functions.
     """
     return add_start(start_token, remove_end(end_token, line))
 
 
-def compose(*functions):
+def compose(*functions: Callable) -> Callable:
     """ Compose multiple functions.
     """
     # pylint: disable=undefined-variable
     return reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
 
 
-def identity(x):
+def identity(x : Any) -> Any :
     """ Return input.
     """
     # pylint: disable=invalid-name
     return x
 
 
-def check_path(path, should_exist):
+def check_path(path : str, should_exist : bool) -> str:
     """ Check that a path (file or folder) exists or not and return it.
     """
     path = os.path.normpath(path)
