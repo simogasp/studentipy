@@ -41,3 +41,6 @@ directory = "reports/coverage/html"
 
 [tool.coverage.xml]
 output = "reports/coverage/coverage.xml"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
